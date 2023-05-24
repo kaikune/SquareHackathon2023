@@ -28,15 +28,6 @@
   }
 }
 
-#apple-pay-button {
-  height: 48px;
-  width: 100%;
-  display: inline-block;
-  -webkit-appearance: -apple-pay-button;
-  -apple-pay-button-type: plain;
-  -apple-pay-button-style: black;
-}
-
 #fast-checkout {
   background: #fafafa;
   color: black;
@@ -83,27 +74,6 @@
   background: #fafafa;
   padding: 0 10px;
   left: calc(50% - 1em - 5px);
-}
-
-#ach-wrapper {
-  display: none;
-}
-
-#ach-wrapper input:first-of-type {
-  margin-bottom: 10px;
-}
-
-#ach-message {
-  width: 100%;
-  margin-top: 11px;
-  margin-bottom: 11px;
-  font-size: 14px;
-  display: inline-block;
-  color: #bf0020;
-}
-
-#ach-message:empty:before, #message:empty:before {
-  content: "\200b";
 }
 
 #payment-flow-message {

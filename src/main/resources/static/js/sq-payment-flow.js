@@ -1,16 +1,16 @@
 async function SquarePaymentFlow() {
-
   // Create card payment object and attach to page
   CardPay(document.getElementById('card-container'), document.getElementById('card-button'));
+}
 
-  // Create Apple pay instance
-  ApplePay(document.getElementById('apple-pay-button'));
-
-  // Create Google pay instance
-  GooglePay(document.getElementById('google-pay-button'));
-
-  // Create ACH payment
-  ACHPay(document.getElementById('ach-button'));
+function create_UUID(){
+  var dt = new Date().getTime();
+  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = (dt + Math.random()*16)%16 | 0;
+      dt = Math.floor(dt/16);
+      return (c=='x' ? r :(r&0x3|0x8)).toString(16);
+  });
+  return uuid;
 }
 
 window.payments = Square.payments(window.applicationId, window.locationId);
@@ -32,62 +32,38 @@ window.showError = function(message) {
 window.createPayment = async function(token) {
   const dataJsonString = JSON.stringify({
     token,
-    idempotencyKey: window.idempotencyKey,
+    name: document.getElementById('customer-name').value,
+    idempotencyKey: create_UUID(),
   });
 
-  try {
-    const response = await fetch('process-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: dataJsonString
-    });
-
-    const data = await response.json();
-
-    if (data.errors && data.errors.length > 0) {
-      if (data.errors[0].detail) {
-        window.showError(data.errors[0].detail);
+  if (document.getElementById('permissions').checked) {
+    try {
+      const response = await fetch('process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: dataJsonString
+      });
+  
+      const data = await response.json();
+      if (data.errors && data.errors.length > 0) {
+        if (data.errors[0].detail) {
+          window.showError(data.errors[0].detail);
+        } else {
+          window.showError('Payment Failed.');
+        }
       } else {
-        window.showError('Payment Failed.');
+        window.showSuccess('Payment Successful!');
       }
-    } else {
-      window.showSuccess('Payment Successful!');
+    } catch (error) {
+      console.error('Error:', error);
     }
-  } catch (error) {
-    console.error('Error:', error);
   }
+  else {
+    window.showError("Unable to process payment without permission.")
+  }
+  
 }
-
-// Hardcoded for testing purpose, only used for Apple Pay and Google Pay
-window.getPaymentRequest = function() {
-  return {
-    countryCode: window.country,
-    currencyCode: window.currency,
-    lineItems: [
-      { amount: '1.23', label: 'Cat', pending: false },
-      { amount: '4.56', label: 'Dog', pending: false },
-    ],
-    requestBillingContact: false,
-    requestShippingContact: true,
-    shippingContact: {
-      addressLines: ['123 Test St', ''],
-      city: 'San Francisco',
-      countryCode: 'US',
-      email: 'test@test.com',
-      familyName: 'Last Name',
-      givenName: 'First Name',
-      phone: '1111111111',
-      postalCode: '94109',
-      state: 'CA',
-    },
-    shippingOptions: [
-      { amount: '0.00', id: 'FREE', label: 'Free' },
-      { amount: '9.99', id: 'XP', label: 'Express' },
-    ],
-    total: { amount: '1.00', label: 'Total', pending: false },
-  };
-};
 
 SquarePaymentFlow();

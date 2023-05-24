@@ -18,11 +18,13 @@ package com.squareup.connectexamples.ecommerce;
 
 import com.squareup.square.Environment;
 import com.squareup.square.api.PaymentsApi;
+import com.squareup.square.api.CustomersApi;
+import com.squareup.square.api.CardsApi;
 import com.squareup.square.models.*;
 import com.squareup.square.SquareClient;
 import com.squareup.square.exceptions.ApiException;
 
-import java.util.Collections;
+// import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.Map;
 import java.util.UUID;
@@ -103,38 +105,112 @@ public class Main {
     return "index";
   }
 
+  /**
+   * Function that processes a payment given a token. Called by a POST to /process-paymet
+   * @param tokenObject
+   * @return
+   * @throws InterruptedException
+   * @throws ExecutionException
+   */
   @PostMapping("/process-payment")
   @ResponseBody
-  PaymentResult processPayment(@RequestBody TokenWrapper tokenObject)
-      throws InterruptedException, ExecutionException {
-    // To learn more about splitting payments with additional recipients,
-    // see the Payments API documentation on our [developer site]
-    // (https://developer.squareup.com/docs/payments-api/overview).
+  PaymentResult processPayment(@RequestBody TokenWrapper tokenObject) throws InterruptedException, ExecutionException {
+    PaymentsApi paymentsApi = squareClient.getPaymentsApi();
 
     // Get currency for location
     RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
     String currency = locationResponse.getLocation().getCurrency();
 
+    // TODO: Add billing address here and in frontend
+
+    // Set price of ticket
     Money bodyAmountMoney = new Money.Builder()
-        .amount(100L)
+        .amount(1L)
         .currency(currency)
         .build();
 
+    // Payment request that binds to the customer
     CreatePaymentRequest createPaymentRequest = new CreatePaymentRequest.Builder(
         tokenObject.getToken(),
         tokenObject.getIdempotencyKey(),
         bodyAmountMoney)
+        .locationId(squareLocationId)
         .build();
+    
+    System.out.println("Source Id: " + tokenObject.getToken());
 
-    PaymentsApi paymentsApi = squareClient.getPaymentsApi();
-    return paymentsApi.createPaymentAsync(createPaymentRequest).thenApply(result -> {
-      return new PaymentResult("SUCCESS", null);
-    }).exceptionally(exception -> {
-      ApiException e = (ApiException) exception.getCause();
-      System.out.println("Failed to make the request");
-      System.out.printf("Exception: %s%n", e.getMessage());
-      return new PaymentResult("FAILURE", e.getErrors());
-    }).join();
+    return paymentsApi.createPaymentAsync(createPaymentRequest)
+        .thenApply(result -> {
+          // Create customer and add card to file
+          createCustomer(tokenObject, result.getPayment().getId());
+          return new PaymentResult("SUCCESS", null);
+        })
+        .exceptionally(exception -> {
+          ApiException e = (ApiException) exception.getCause();
+          System.out.println("Failed to make the request");
+          System.out.printf("Exception: %s%n", e.getMessage());
+          return new PaymentResult("FAILURE", e.getErrors());
+        }).join();
+  }
+
+  /**
+   * Helper function for createCustomer that creates a card with a given customerId and paymentId
+   * @param tokenObject
+   * @param customerId
+   * @param paymentId
+   */
+  private void createCard(TokenWrapper tokenObject, String customerId, String paymentId) { 
+    CardsApi cardsApi = squareClient.getCardsApi();
+
+    Card card = new Card.Builder()
+      .cardholderName(tokenObject.getName())
+      //.billingAddress("Where to get billing address")
+      .customerId(customerId)
+      .build();
+    
+    CreateCardRequest body = new CreateCardRequest.Builder(
+      UUID.randomUUID().toString(),
+      paymentId,
+      card)
+    .build();
+    
+    cardsApi.createCardAsync(body)
+      .thenAccept(result -> {
+        System.out.println("Success!");
+      })
+      .exceptionally(exception -> {
+        System.out.println("Failed to make the request");
+        System.out.println(String.format("Exception: %s", exception.getMessage()));
+        return null;
+      });
+  }
+
+  /**
+   * Requests customer creation
+   * @param tokenObject
+   * @return a future that holds the customerId
+   */
+  private void createCustomer(TokenWrapper tokenObject, String paymentId) {  
+    CustomersApi customersApi = squareClient.getCustomersApi();
+
+    CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
+        .givenName(tokenObject.getName())
+        .emailAddress("email@email.com")
+        .referenceId(UUID.randomUUID().toString())
+        .note("Placeholder") // Holds Ticket ID use for authentication
+        .build();
+    
+    customersApi.createCustomerAsync(customer)
+      .thenAccept(result -> {
+        String customerId = result.getCustomer().getId();
+        System.out.println("Success!");
+        createCard(tokenObject, customerId, paymentId);
+      })
+      .exceptionally(exception -> {
+        System.out.println("Failed to make the request");
+        System.out.println(String.format("Exception: %s", exception.getMessage()));
+        return null;
+      });
   }
 
   /**
@@ -144,8 +220,7 @@ public class Main {
    * @param squareClient the API client
    * @return a future that holds the retrieveLocation response
    */
-  private CompletableFuture<RetrieveLocationResponse> getLocationInformation(
-      SquareClient squareClient) {
+  private CompletableFuture<RetrieveLocationResponse> getLocationInformation(SquareClient squareClient) {
     return squareClient.getLocationsApi().retrieveLocationAsync(squareLocationId)
         .thenApply(result -> {
           return result;

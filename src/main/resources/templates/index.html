@@ -12,7 +12,6 @@
     window.locationId = '[[${locationId}]]';
     window.currency = '[[${currency}]]';
     window.country = '[[${country}]]';
-    window.idempotencyKey = '[[${idempotencyKey}]]';
   </script>
   <!--
     These styles can live in a separate .css file. They're just here to keep this
@@ -22,39 +21,24 @@
   <link rel="stylesheet" type="text/css" href="/css/style.css">
 </head>
 
+<!-- TODO: Add billing address field -->
+
 <body>
+  <a> Buy Ticket </a>
 <!-- Begin Payment Form -->
   <form class="payment-form" id="fast-checkout">
     <div class="wrapper">
-      <div id="apple-pay-button" alt="apple-pay" type="button"></div>
-      <div id="google-pay-button" alt="google-pay" type="button"></div>
-      <div class="border">
-        <span>OR</span>
-      </div>
-      <div id="ach-wrapper">
-        <label for="ach-account-holder-name"> Full Name</label>
-        <input
-            id="ach-account-holder-name"
-            type="text"
-            placeholder="Jane Doe"
-            name="ach-account-holder-name"
-            autocomplete="name"
-        />
-        <span id="ach-message"></span>
-        <button id="ach-button" type="button">Pay with Bank Account</button>
-        <div class="border">
-          <span>OR</span>
-        </div>
-      </div>
+      <input type="text" id="customer-name" placeholder="Name" required>
       <div id="card-container"></div>
+      <label class="container"> Acknowledge that your card will be saved on file
+        <input type="checkbox" id="permissions" checked="checked">
+        <span class="checkmark"></span>
+      </label>
       <button id="card-button" type="button">Pay with Card</button>
       <span id="payment-flow-message"></span>
     </div>
   </form>
   <!-- End Payment Form -->
-  <script src="js/sq-ach.js"></script>
-  <script src="js/sq-apple-pay.js"></script>
-  <script src="js/sq-google-pay.js"></script>
   <script src="js/sq-card-pay.js"></script>
   <script src="js/sq-payment-flow.js"></script>
 </body>
