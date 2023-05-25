@@ -66,3 +66,22 @@ input {
   border: 1px solid #d9d9d9;
   box-sizing: border-box;
 }
+
+.seat {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  margin: 5px;
+  background-color: #ccc;
+  cursor: pointer;
+}
+
+.seat.sold {
+  background-color: red;
+  /* Add additional styles for sold seats */
+}
+
+.seat.selected {
+  background-color: blue;
+  /* Add additional styles for selected seats */
+}

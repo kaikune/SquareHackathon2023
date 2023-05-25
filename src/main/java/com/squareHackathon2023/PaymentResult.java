@@ -1,4 +1,4 @@
-package com.squareup.connectexamples.ecommerce;
+package com.squareHackathon2023;
 
 import java.util.List;
 

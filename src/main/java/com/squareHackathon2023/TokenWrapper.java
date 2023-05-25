@@ -1,4 +1,4 @@
-package com.squareup.connectexamples.ecommerce;
+package com.squareHackathon2023;
 
 /**
  * TokenWrapper is a model object representing the token received from the front end.
@@ -7,6 +7,9 @@ public class TokenWrapper {
 
     private String token;
     private String name;
+    private String email;
+    private String venueId;
+    private int seatNum;
     private String idempotencyKey;
 
     public String getToken() {
@@ -21,10 +24,34 @@ public class TokenWrapper {
       return name;
     }
 
-    public void setString(String name) {
+    public void setName(String name) {
       this.name = name;
     }
     
+    public String getEmail() {
+      return email;
+    }
+
+    public void setEmail(String email) {
+      this.email = email;
+    }
+
+    public String getVenueId() {
+      return venueId;
+    }
+
+    public void setVenueId(String venueId) { 
+      this.venueId = venueId;
+    }
+
+    public int getSeatNum() {
+      return seatNum;
+    }
+
+    public void setSeatNum(int seatNum) {
+      this.seatNum = seatNum;
+    }
+
     public String getIdempotencyKey() {
       return idempotencyKey;
     }

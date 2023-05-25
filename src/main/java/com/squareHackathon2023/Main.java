@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.squareup.connectexamples.ecommerce;
+package com.squareHackathon2023;
 
 import com.squareup.square.Environment;
 import com.squareup.square.api.PaymentsApi;
 import com.squareup.square.api.CustomersApi;
 import com.squareup.square.api.CardsApi;
 import com.squareup.square.models.*;
+// import com.squareup.square.utilities.JsonObject;
 import com.squareup.square.SquareClient;
 import com.squareup.square.exceptions.ApiException;
 
@@ -32,10 +33,12 @@ import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import com.google.gson.Gson;
 
 @Controller
 @SpringBootApplication
@@ -62,6 +65,8 @@ public class Main {
   private final String squareAppId;
   private final String squareEnvironment;
 
+  private final Venue venue = new Venue("Concert Central", 10);  // TODO: Would need to change if implementing multiple venues
+
   public Main() throws ApiException {
     squareEnvironment = mustLoadEnvironmentVariable(SQUARE_ENV_ENV_VAR);
     squareAppId = mustLoadEnvironmentVariable(SQUARE_APP_ID_ENV_VAR);
@@ -70,7 +75,7 @@ public class Main {
     squareClient = new SquareClient.Builder()
         .environment(Environment.fromString(squareEnvironment))
         .accessToken(mustLoadEnvironmentVariable(SQUARE_ACCESS_TOKEN_ENV_VAR))
-        .userAgentDetail("sample_app_java_payment") // Remove or replace this detail when building your own app
+        .userAgentDetail("Ticketing") // Remove or replace this detail when building your own app
         .build();
   }
 
@@ -93,9 +98,7 @@ public class Main {
 
     // Get currency and country for location
     RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
-    model.put("paymentFormUrl",
-        squareEnvironment.equals("sandbox") ? "https://sandbox.web.squarecdn.com/v1/square.js"
-            : "https://web.squarecdn.com/v1/square.js");
+    model.put("paymentFormUrl", squareEnvironment.equals("sandbox") ? "https://sandbox.web.squarecdn.com/v1/square.js" : "https://web.squarecdn.com/v1/square.js");
     model.put("locationId", squareLocationId);
     model.put("appId", squareAppId);
     model.put("currency", locationResponse.getLocation().getCurrency());
@@ -103,6 +106,15 @@ public class Main {
     model.put("idempotencyKey", UUID.randomUUID().toString());
 
     return "index";
+  }
+
+  @GetMapping("/venue")
+  @ResponseBody
+  public Venue getSeats() {
+    Gson gson = new Gson();
+    gson.toJson(venue);
+
+    return venue;
   }
 
   /**
@@ -137,17 +149,18 @@ public class Main {
         .locationId(squareLocationId)
         .build();
     
-    System.out.println("Source Id: " + tokenObject.getToken());
+    //System.out.println("Source Id: " + tokenObject.getToken());
 
     return paymentsApi.createPaymentAsync(createPaymentRequest)
         .thenApply(result -> {
           // Create customer and add card to file
           createCustomer(tokenObject, result.getPayment().getId());
+          System.out.println("Payment Request Success!");
           return new PaymentResult("SUCCESS", null);
         })
         .exceptionally(exception -> {
           ApiException e = (ApiException) exception.getCause();
-          System.out.println("Failed to make the request");
+          System.out.println("Failed to make the request 1");
           System.out.printf("Exception: %s%n", e.getMessage());
           return new PaymentResult("FAILURE", e.getErrors());
         }).join();
@@ -176,10 +189,10 @@ public class Main {
     
     cardsApi.createCardAsync(body)
       .thenAccept(result -> {
-        System.out.println("Success!");
+        System.out.println("Card Request Success!");
       })
       .exceptionally(exception -> {
-        System.out.println("Failed to make the request");
+        System.out.println("Failed to make the request 2");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         return null;
       });
@@ -193,22 +206,38 @@ public class Main {
   private void createCustomer(TokenWrapper tokenObject, String paymentId) {  
     CustomersApi customersApi = squareClient.getCustomersApi();
 
+    Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
+    String auth = "No ticket";
+
+    // Debug prints
+    // System.out.printf("Seat #: %s vs. token seat: %s\n", tokenObject.getSeatNum(), seat);
+    // System.out.printf("Venue #: %s vs. venue: %s\n", tokenObject.getVenueId(), venue.getVenueId());
+    // System.out.println("Sold? " + seat.isSold());
+    // System.out.println("auth: " + seat.getAuth());
+
+    // Venue matches, seat exists, and seat is still for sale
+    if (venue.getVenueId().equals(tokenObject.getVenueId()) && seat != null && !seat.isSold()) {
+      auth = seat.getAuth();
+      seat.sell();
+    }
+
     CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
         .givenName(tokenObject.getName())
-        .emailAddress("email@email.com")
+        .emailAddress(tokenObject.getEmail())
         .referenceId(UUID.randomUUID().toString())
-        .note("Placeholder") // Holds Ticket ID use for authentication
+        .note(auth) // Holds authentication id
         .build();
     
     customersApi.createCustomerAsync(customer)
       .thenAccept(result -> {
         String customerId = result.getCustomer().getId();
-        System.out.println("Success!");
+        System.out.println("Customer Request Success!");
         createCard(tokenObject, customerId, paymentId);
       })
       .exceptionally(exception -> {
-        System.out.println("Failed to make the request");
+        System.out.println("Failed to make the request 3");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
+        System.out.println("Check if email is valid");
         return null;
       });
   }
@@ -226,7 +255,7 @@ public class Main {
           return result;
         })
         .exceptionally(exception -> {
-          System.out.println("Failed to make the request");
+          System.out.println("Failed to make the request 4");
           System.out.printf("Exception: %s%n", exception.getMessage());
           return null;
         });

@@ -1,3 +1,4 @@
+
 async function SquarePaymentFlow() {
   // Create card payment object and attach to page
   CardPay(document.getElementById('card-container'), document.getElementById('card-button'));
@@ -29,10 +30,26 @@ window.showError = function(message) {
   window.paymentFlowMessageEl.innerText = message;
 }
 
-window.createPayment = async function(token) {
+window.createPayment = async function(token, seatNum) {
+  const name = document.getElementById('customer-name').value;
+  const email = document.getElementById('customer-email').value;
+
+  if (!name || !email) {
+    window.showError('Please fill in the required fields.');
+    return;
+  }
+  
+  if (!seatNum) {
+    window.showError("Please pick a seat!");
+    return;
+  }
+
   const dataJsonString = JSON.stringify({
     token,
-    name: document.getElementById('customer-name').value,
+    name: name,
+    email: email,
+    venueId: venueId,
+    seatNum: seatNum,
     idempotencyKey: create_UUID(),
   });
 
@@ -63,7 +80,6 @@ window.createPayment = async function(token) {
   else {
     window.showError("Unable to process payment without permission.")
   }
-  
 }
 
 SquarePaymentFlow();
