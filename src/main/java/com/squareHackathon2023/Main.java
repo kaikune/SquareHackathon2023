@@ -135,9 +135,11 @@ public class Main {
 
     // TODO: Add billing address here and in frontend
 
+    Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
+
     // Set price of ticket
     Money bodyAmountMoney = new Money.Builder()
-        .amount(1L)
+        .amount(seat.getPrice())
         .currency(currency)
         .build();
 
