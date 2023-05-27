@@ -26,3 +26,7 @@ replay_pid*
 .env
 
 .DS_Store
+
+*.pem
+
+build-info.properties

@@ -29,21 +29,14 @@
 <!-- Begin Payment Form -->
   <form class="payment-form" id="fast-checkout">
     <div class="wrapper">
-      <input type="text" id="customer-name" placeholder="Name" required>
-      <input type="email" id="customer-email" placeholder="email@email.com" required>
       <div id="card-container"></div>
-      <label class="container"> Acknowledge that your card will be saved on file
-        <input type="checkbox" id="permissions" checked="checked">
-        <span class="checkmark"></span>
-      </label>
-      
-      <button id="card-button" type="button">Pay with Card</button>
+      <button id="card-button" type="button">Verify</button>
       <span id="payment-flow-message"></span>
     </div>
   </form>
   <!-- End Payment Form -->
   <script src="js/venue.js"></script>
-  <script src="js/sq-card-pay.js"></script>
-  <script src="js/sq-payment-flow.js"></script>
+  <script src="js/sq-verify.js"></script>
+
 </body>
 </html>

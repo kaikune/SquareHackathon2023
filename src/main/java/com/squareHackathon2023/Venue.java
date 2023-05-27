@@ -9,34 +9,45 @@ import java.util.UUID;
  * Venue Class that holds total seats, venueId, and a dictionary with an integer key (seat number) and String value (authentication Id to match customer's note field)
  */
 public class Venue {
-    private String name;
+    private String venueName;
+    private String eventName;
     private int totalSeats;
     private String venueId;
     private Dictionary<Integer, Seat> seats;
 
     public Venue() {
-        name = "";
+        venueName = "";
+        eventName = "";
         totalSeats = 0;
         venueId = UUID.randomUUID().toString();
         seats = new Hashtable<>();
     }
 
-    public Venue(String name, int totalSeats) {
-        this.name = name;
+    public Venue(String venueName, String eventName, int totalSeats) {
+        this.venueName = venueName;
+        this.eventName = eventName;
         this.totalSeats = totalSeats;
         venueId = UUID.randomUUID().toString();
         seats = new Hashtable<>();
         fill(totalSeats);
     }
 
-    public String getName() {
-        return name;
+    public String getVenueName() {
+        return venueName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setVenueName(String name) {
+        this.venueName = name;
     }
-    
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+    }
+
     public int getTotalSeats() {
         return totalSeats;
     }
@@ -59,7 +70,7 @@ public class Venue {
     }
 
     /**
-     * Fills seats with authentication ids
+     * Creates seats
      * @param totalSeats
      */
     public void fill(int totalSeats) {
@@ -68,6 +79,9 @@ public class Venue {
         for(int i = 0; i < totalSeats; i++) {
             seats.put(i, new Seat());   // TODO: Edit to create price for seats
         }
+        
+        // Debug
+        seats.get(2).arrive();
     }
 
     public String toString() {

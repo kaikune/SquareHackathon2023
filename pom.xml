@@ -106,6 +106,13 @@
       <artifactId>gson</artifactId>
       <version>2.10</version>
     </dependency>
+
+    <!-- ENV -->
+    <dependency>
+      <groupId>io.github.cdimascio</groupId>
+      <artifactId>dotenv-java</artifactId>
+      <version>2.3.2</version>
+  </dependency>
   </dependencies>
 
   <build>

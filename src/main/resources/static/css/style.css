@@ -78,10 +78,12 @@ input {
 
 .seat.sold {
   background-color: red;
-  /* Add additional styles for sold seats */
+}
+
+.seat.arrived {
+  background-color: green;
 }
 
 .seat.selected {
   background-color: blue;
-  /* Add additional styles for selected seats */
 }

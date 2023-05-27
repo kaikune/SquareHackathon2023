@@ -20,8 +20,6 @@ async function CardPay(fieldEl, buttonEl) {
       const result = await card.tokenize();
       if (result.status === 'OK') {
         // Use global method from sq-payment-flow.js
-        // console.log(chosenSeat);
-        // console.log("venue " , venueId);
         window.createPayment(result.token, chosenSeat);
       }
     } catch (e) {

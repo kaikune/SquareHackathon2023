@@ -6,6 +6,7 @@ public class Seat {
     private long price;
     private String auth;
     private boolean sold;
+    private boolean arrived;
 
     public Seat() {
         price = 100L;
@@ -37,5 +38,13 @@ public class Seat {
 
     public void sell() {
         sold = true;
+    }
+
+    public boolean isArrived() {
+        return arrived;
+    }
+
+    public void arrive() {
+        arrived = true;
     }
 }

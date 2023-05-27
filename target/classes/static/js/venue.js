@@ -15,6 +15,7 @@ var venueId;
         }
 
         const venue = await response.json();
+        console.log(venue);
         venueId = venue.venueId;
         generateSeats(venue.seats);
 
@@ -31,8 +32,6 @@ function generateSeats(seats) {
     // Generate seat elements dynamically
     var venue = document.getElementById("venue");
 
-    //console.log(seats);
-
     for (var seatNum in seats) {
         var seat = seats[seatNum];
         var seatEl = document.createElement("div");
@@ -40,46 +39,35 @@ function generateSeats(seats) {
         seatEl.classList.add("seat");
         seatEl.textContent = seatNum;
 
-        // Check if the seat is sold
-        if (seat.sold) {
+        // Check if the seat is filled or sold
+        if (seat.arrived) {
+            seatEl.classList.add("arrived");
+            seatEl.setAttribute("title", "Seat is filled");
+        } else if (seat.sold) {
             seatEl.classList.add("sold");
             seatEl.setAttribute("title", "Seat is sold");
-            seatEl.addEventListener("click", function() {
-                alert("This seat is already sold.");
-                return; // Prevent selecting the seat after the alert
-            });
-        } else {
-            seatEl.addEventListener("click", function() {
+        }
+
+        // Add click event listener to select the seat
+        seatEl.addEventListener("click", function() {
+            // Check if the seat is filled or sold before selecting
+            if (this.classList.contains("arrived")) {
+                alert("Sorry! This seat is already filled");
+            } else if (this.classList.contains("sold")) {
+                alert("Sorry! This seat has been sold")
+            } else {
                 // Deselect previously selected seats
                 var selectedSeats = document.getElementsByClassName("selected");
                 for (var j = 0; j < selectedSeats.length; j++) {
                     selectedSeats[j].classList.remove("selected");
                 }
-                
+
                 // Select the clicked seat
                 this.classList.add("selected");
                 chosenSeat = parseInt(this.textContent);
-            });
-        }
+            }
+        });
 
         venue.appendChild(seatEl);
-    }
-
-    // Get all seat elements
-    var seatEls = document.getElementsByClassName("seat");
-
-    // Add click event listener to each seat
-    for (var i = 0; i < seatEls.length; i++) {
-        seatEls[i].addEventListener("click", function() {
-            // Deselect previously selected seats
-            var selectedSeats = document.getElementsByClassName("selected");
-            for (var j = 0; j < selectedSeats.length; j++) {
-                selectedSeats[j].classList.remove("selected");
-            }
-            
-            // Select the clicked seat
-            this.classList.add("selected");
-            chosenSeat = parseInt(this.textContent);
-        });
     }
 }

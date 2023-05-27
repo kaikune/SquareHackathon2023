@@ -30,6 +30,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
@@ -39,42 +42,29 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import com.google.gson.Gson;
+import io.github.cdimascio.dotenv.Dotenv;
 
 @Controller
 @SpringBootApplication
+//@RequestMapping("/ticket-selling/") // Set the base URL
 public class Main {
-  // The environment variable containing a Square Personal Access Token.
-  // This must be set in order for the application to start.
-  private static final String SQUARE_ACCESS_TOKEN_ENV_VAR = "SQUARE_ACCESS_TOKEN";
+  protected final SquareClient squareClient;
+  protected final String squareLocationId;
+  protected final String squareAppId;
+  protected final String squareEnvironment;
 
-  // The environment variable containing a Square application ID.
-  // This must be set in order for the application to start.
-  private static final String SQUARE_APP_ID_ENV_VAR = "SQUARE_APPLICATION_ID";
-
-  // The environment variable containing a Square location ID.
-  // This must be set in order for the application to start.
-  private static final String SQUARE_LOCATION_ID_ENV_VAR = "SQUARE_LOCATION_ID";
-
-  // The environment variable indicate the square environment - sandbox or
-  // production.
-  // This must be set in order for the application to start.
-  private static final String SQUARE_ENV_ENV_VAR = "ENVIRONMENT";
-
-  private final SquareClient squareClient;
-  private final String squareLocationId;
-  private final String squareAppId;
-  private final String squareEnvironment;
-
-  private final Venue venue = new Venue("Concert Central", 10);  // TODO: Would need to change if implementing multiple venues
+  protected final Venue venue = new Venue("Concert Central", "Ice Spice", 10);  // TODO: Would need to change if implementing multiple venues
+  private final Gson gson = new Gson();
 
   public Main() throws ApiException {
-    squareEnvironment = mustLoadEnvironmentVariable(SQUARE_ENV_ENV_VAR);
-    squareAppId = mustLoadEnvironmentVariable(SQUARE_APP_ID_ENV_VAR);
-    squareLocationId = mustLoadEnvironmentVariable(SQUARE_LOCATION_ID_ENV_VAR);
+    Dotenv dotenv = Dotenv.load();
+    squareEnvironment = mustLoadEnvironmentVariable(dotenv.get("ENVIRONMENT"));
+    squareAppId = mustLoadEnvironmentVariable(dotenv.get("SQUARE_APPLICATION_ID"));
+    squareLocationId = mustLoadEnvironmentVariable(dotenv.get("SQUARE_LOCATION_ID"));
 
     squareClient = new SquareClient.Builder()
         .environment(Environment.fromString(squareEnvironment))
-        .accessToken(mustLoadEnvironmentVariable(SQUARE_ACCESS_TOKEN_ENV_VAR))
+        .accessToken(mustLoadEnvironmentVariable(dotenv.get("SQUARE_ACCESS_TOKEN")))
         .userAgentDetail("Ticketing") // Remove or replace this detail when building your own app
         .build();
   }
@@ -83,13 +73,11 @@ public class Main {
     SpringApplication.run(Main.class, args);
   }
 
-  private String mustLoadEnvironmentVariable(String name) {
-    String value = System.getenv(name);
+  private String mustLoadEnvironmentVariable(String value) {
     if (value == null || value.length() == 0) {
       throw new IllegalStateException(
-          String.format("The %s environment variable must be set", name));
+          String.format("An environment variable is missing"));
     }
-
     return value;
   }
 
@@ -108,12 +96,27 @@ public class Main {
     return "index";
   }
 
+  @RequestMapping("/check-in")
+  String checkIn(Map<String, Object> model) throws InterruptedException, ExecutionException {
+
+    // Get currency and country for location
+    RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
+    model.put("paymentFormUrl", squareEnvironment.equals("sandbox") ? "https://sandbox.web.squarecdn.com/v1/square.js" : "https://web.squarecdn.com/v1/square.js");
+    model.put("locationId", squareLocationId);
+    model.put("appId", squareAppId);
+    model.put("currency", locationResponse.getLocation().getCurrency());
+    model.put("country", locationResponse.getLocation().getCountry());
+    model.put("idempotencyKey", UUID.randomUUID().toString());
+
+    return "checkIn";
+  }
+
+  /**
+   * Returns status of the venue. To be called repeatedly by frontend.
+   */
   @GetMapping("/venue")
   @ResponseBody
   public Venue getSeats() {
-    Gson gson = new Gson();
-    gson.toJson(venue);
-
     return venue;
   }
 
@@ -169,6 +172,97 @@ public class Main {
   }
 
   /**
+   * Recieves JSON from Square on payment.created and checks card to see if there is a seat associated with customer
+   * @param tokenObject
+   * @return
+   * @throws InterruptedException
+   * @throws ExecutionException
+   */
+  @PostMapping("/process-verification")
+  @ResponseBody
+  void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
+    PaymentsApi paymentsApi = squareClient.getPaymentsApi();
+    TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
+
+    //Seat seat = venue.findSeat(result.getSeatNum()); // Gets auth if seat number corresponds
+
+    try {
+      paymentsApi.cancelPayment(result.getPaymentId());
+    }
+    catch (Exception exception) {
+      ApiException e = (ApiException) exception.getCause();
+      System.out.printf("Exception: %s%n", e.getMessage());
+      return;
+    }
+
+    // Check for if card has a ticket on it
+    int seatNum = validateCard(result.getFingerprint());
+
+    //Check in attendee
+    venue.findSeat(seatNum).arrive();
+  }
+
+  /**
+   * Method that grabs all of the customers and compares their filed cards with a given card
+   * @param fingerprint
+   * @return seat number (-1 if invalid)
+   */
+  public int validateCard(String fingerprint) {
+    CustomersApi customersApi = squareClient.getCustomersApi();
+    AtomicInteger seat = new AtomicInteger(-1);
+  
+    CompletableFuture<Void> future = customersApi.listCustomersAsync(null, null, null, null)
+      .thenAccept(result -> {
+        System.out.println("List Customers Success!");
+  
+        if (result.getCustomers() != null) {
+          for (Customer customer : result.getCustomers()) {
+            if (isCardOnFile(customer, fingerprint)) {
+              Ticket ticket = gson.fromJson(customer.getNote(), Ticket.class);
+              Seat currSeat = venue.findSeat(ticket.getSeat());
+
+              System.out.println("Found customer");
+
+              // Check ticket for validity
+              if (ticket.getAuth() == currSeat.getAuth()) {
+                System.out.printf("Ticket for seat %d Valid!\n", ticket.getSeat());
+                seat.set(ticket.getSeat());
+              } else {
+                System.out.printf("Unable to validate ticket %d\n", ticket.getSeat());
+              }
+              return;
+            }
+          }
+        }
+      })
+      .exceptionally(exception -> {
+        System.out.println("Failed to make the request");
+        System.out.println(String.format("Exception: %s", exception.getMessage()));
+        return null;
+      });
+  
+    future.join();
+  
+    return seat.get();
+  }
+
+  private boolean isCardOnFile(Customer customer, String fingerprint) {
+    // Retrieve the list of cards associated with the customer
+    List<Card> cards = customer.getCards();
+
+    // Check if the received card data matches any of the cards on file
+    if (cards != null) {
+      for (Card card : cards) {
+        if (card.getFingerprint().equals(fingerprint)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Helper function for createCustomer that creates a card with a given customerId and paymentId
    * @param tokenObject
    * @param customerId
@@ -187,7 +281,7 @@ public class Main {
       UUID.randomUUID().toString(),
       paymentId,
       card)
-    .build();
+      .build();
     
     cardsApi.createCardAsync(body)
       .thenAccept(result -> {
@@ -205,11 +299,11 @@ public class Main {
    * @param tokenObject
    * @return a future that holds the customerId
    */
-  private void createCustomer(TokenWrapper tokenObject, String paymentId) {  
+  protected void createCustomer(TokenWrapper tokenObject, String paymentId) {  
     CustomersApi customersApi = squareClient.getCustomersApi();
 
     Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
-    String auth = "No ticket";
+    String note = "No ticket";
 
     // Debug prints
     // System.out.printf("Seat #: %s vs. token seat: %s\n", tokenObject.getSeatNum(), seat);
@@ -219,7 +313,11 @@ public class Main {
 
     // Venue matches, seat exists, and seat is still for sale
     if (venue.getVenueId().equals(tokenObject.getVenueId()) && seat != null && !seat.isSold()) {
-      auth = seat.getAuth();
+      Ticket ticket = new Ticket(tokenObject.getSeatNum(), seat.getAuth()); // Creates ticket
+
+      note = gson.toJson(ticket); // Converts ticket to string JSON
+      System.out.println(note);
+
       seat.sell();
     }
 
@@ -227,7 +325,7 @@ public class Main {
         .givenName(tokenObject.getName())
         .emailAddress(tokenObject.getEmail())
         .referenceId(UUID.randomUUID().toString())
-        .note(auth) // Holds authentication id
+        .note(note) // Holds authentication id
         .build();
     
     customersApi.createCustomerAsync(customer)
@@ -251,7 +349,7 @@ public class Main {
    * @param squareClient the API client
    * @return a future that holds the retrieveLocation response
    */
-  private CompletableFuture<RetrieveLocationResponse> getLocationInformation(SquareClient squareClient) {
+  protected CompletableFuture<RetrieveLocationResponse> getLocationInformation(SquareClient squareClient) {
     return squareClient.getLocationsApi().retrieveLocationAsync(squareLocationId)
         .thenApply(result -> {
           return result;
@@ -263,3 +361,4 @@ public class Main {
         });
   }
 }
+
