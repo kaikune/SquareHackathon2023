@@ -19,6 +19,7 @@ package com.squareHackathon2023;
 import com.squareup.square.Environment;
 import com.squareup.square.api.PaymentsApi;
 import com.squareup.square.api.CustomersApi;
+import com.squareup.square.api.DevicesApi;
 import com.squareup.square.api.CardsApi;
 import com.squareup.square.models.*;
 // import com.squareup.square.utilities.JsonObject;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
 import com.google.gson.Gson;
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -129,7 +131,7 @@ public class Main {
    */
   @PostMapping("/process-payment")
   @ResponseBody
-  PaymentResult processPayment(@RequestBody TokenWrapper tokenObject) throws InterruptedException, ExecutionException {
+  SquareResult processPayment(@RequestBody TokenWrapper tokenObject) throws InterruptedException, ExecutionException {
     PaymentsApi paymentsApi = squareClient.getPaymentsApi();
 
     // Get currency for location
@@ -160,14 +162,15 @@ public class Main {
         .thenApply(result -> {
           // Create customer and add card to file
           createCustomer(tokenObject, result.getPayment().getId());
+          System.out.printf("Fingerprint: %s\n", result.getPayment().getCardDetails().getCard().getFingerprint());
           System.out.println("Payment Request Success!");
-          return new PaymentResult("SUCCESS", null);
+          return new SquareResult("SUCCESS", null);
         })
         .exceptionally(exception -> {
           ApiException e = (ApiException) exception.getCause();
           System.out.println("Failed to make the request 1");
           System.out.printf("Exception: %s%n", e.getMessage());
-          return new PaymentResult("FAILURE", e.getErrors());
+          return new SquareResult("FAILURE", e.getErrors());
         }).join();
   }
 
@@ -200,6 +203,35 @@ public class Main {
 
     //Check in attendee
     venue.findSeat(seatNum).arrive();
+  }
+
+  /**
+   * Controls the connection of a Square Terminal to the application.
+   * @return SquareResult with the device code
+   */
+  @PostMapping("/connect")
+  @ResponseBody
+  SquareResult connectToTerminal() {
+    DevicesApi devicesApi = squareClient.getDevicesApi();
+    DeviceCode deviceCode = new DeviceCode.Builder("TERMINAL_API")
+      .name("Check-In")
+      .locationId(squareLocationId)
+      .build();
+
+    CreateDeviceCodeRequest body = new CreateDeviceCodeRequest.Builder(UUID.randomUUID().toString(), deviceCode)
+      .build();
+
+    return devicesApi.createDeviceCodeAsync(body)
+      .thenApply(result -> {
+        System.out.println("Device code aquired!");
+        return new SquareResult(result.getDeviceCode().getCode(), null);
+      })
+      .exceptionally(exception -> {
+        ApiException e = (ApiException) exception.getCause();
+        System.out.println("Failed to make the device request");
+        System.out.printf("Exception: %s%n", e.getMessage());
+        return new SquareResult("FAILURE", e.getErrors());
+      }).join();
   }
 
   /**

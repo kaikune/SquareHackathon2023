@@ -5,13 +5,13 @@ import java.util.List;
 /**
  * PaymentResult is an object representing the response back to the front end.
  */
-public class PaymentResult {
+public class SquareResult {
 
   private String title;
 
   private List<com.squareup.square.models.Error> errors;
 
-  public PaymentResult(String t, List<com.squareup.square.models.Error> errorMessages) {
+  public SquareResult(String t, List<com.squareup.square.models.Error> errorMessages) {
     this.title = t;
     this.errors = errorMessages;
   }
