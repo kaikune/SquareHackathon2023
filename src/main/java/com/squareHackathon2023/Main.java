@@ -21,6 +21,7 @@ import com.squareup.square.api.PaymentsApi;
 import com.squareup.square.api.CustomersApi;
 import com.squareup.square.api.DevicesApi;
 import com.squareup.square.api.CardsApi;
+import com.squareup.square.api.TerminalApi;
 import com.squareup.square.models.*;
 // import com.squareup.square.utilities.JsonObject;
 import com.squareup.square.SquareClient;
@@ -151,8 +152,8 @@ public class Main {
     // Payment request that binds to the customer
     CreatePaymentRequest createPaymentRequest = new CreatePaymentRequest.Builder(
         tokenObject.getToken(),
-        tokenObject.getIdempotencyKey(),
-        bodyAmountMoney)
+        tokenObject.getIdempotencyKey())
+        .amountMoney(bodyAmountMoney)
         .locationId(squareLocationId)
         .build();
     
@@ -172,37 +173,6 @@ public class Main {
           System.out.printf("Exception: %s%n", e.getMessage());
           return new SquareResult("FAILURE", e.getErrors());
         }).join();
-  }
-
-  /**
-   * Recieves JSON from Square on payment.created and checks card to see if there is a seat associated with customer
-   * @param tokenObject
-   * @return
-   * @throws InterruptedException
-   * @throws ExecutionException
-   */
-  @PostMapping("/process-verification")
-  @ResponseBody
-  void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
-    PaymentsApi paymentsApi = squareClient.getPaymentsApi();
-    TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
-
-    //Seat seat = venue.findSeat(result.getSeatNum()); // Gets auth if seat number corresponds
-
-    try {
-      paymentsApi.cancelPayment(result.getPaymentId());
-    }
-    catch (Exception exception) {
-      ApiException e = (ApiException) exception.getCause();
-      System.out.printf("Exception: %s%n", e.getMessage());
-      return;
-    }
-
-    // Check for if card has a ticket on it
-    int seatNum = validateCard(result.getFingerprint());
-
-    //Check in attendee
-    venue.findSeat(seatNum).arrive();
   }
 
   /**
@@ -232,6 +202,70 @@ public class Main {
         System.out.printf("Exception: %s%n", e.getMessage());
         return new SquareResult("FAILURE", e.getErrors());
       }).join();
+  }
+
+  @PostMapping("/verify")
+  @ResponseBody
+  void sendCheckoutRequest(String deviceId) {
+    Money amountMoney = new Money.Builder()
+      .amount(1L)
+      .currency("USD")
+      .build();
+
+    PaymentOptions paymentOptions = new PaymentOptions.Builder()
+      .autocomplete(false)
+      .delayDuration("PT1M")  // cancels payment automatically after 1 minute
+      .acceptPartialAuthorization(false)
+      .delayAction("CANCEL")
+      .build();
+
+    DeviceCheckoutOptions deviceOptions = new DeviceCheckoutOptions.Builder(deviceId) // DeviceId from connectToTerminal
+      .skipReceiptScreen(true)
+      .collectSignature(false)
+      .build();
+
+    TerminalCheckout checkout = new TerminalCheckout.Builder(amountMoney, deviceOptions)
+      .note("Tap Here to check in")
+      .paymentOptions(paymentOptions)
+      .paymentType("CARD_PRESENT")
+      .build();
+
+    CreateTerminalCheckoutRequest body = new CreateTerminalCheckoutRequest.Builder(UUID.randomUUID().toString(), checkout)
+      .build();
+
+    TerminalApi terminalApi = squareClient.getTerminalApi();
+    terminalApi.createTerminalCheckoutAsync(body)
+      .thenAccept(result -> {
+        System.out.println("Checkout Request Success");
+      })
+      .exceptionally(exception -> {
+        System.out.println("Failed to make the checkout request");
+        System.out.println(String.format("Exception: %s", exception.getMessage()));
+        return null;
+      });
+  }
+
+  /**
+   * Recieves JSON from Square on payment.created and checks card to see if there is a seat associated with customer
+   * @param String
+   * @return
+   * @throws InterruptedException
+   * @throws ExecutionException
+   */
+  @PostMapping("/process-verification")
+  @ResponseBody
+  void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
+    TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
+
+    // Check for if card has a ticket on it
+    int seatNum = validateCard(result.getFingerprint());
+
+    //Check in attendee
+    if (seatNum != -1) {
+      venue.findSeat(seatNum).arrive();
+    } else {
+      System.out.println("Seat not found");
+    }
   }
 
   /**

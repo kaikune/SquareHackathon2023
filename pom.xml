@@ -17,7 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <webjars-bootstrap.version>5.1.3</webjars-bootstrap.version>
-    <webjars-jquery-ui.version>1.13.1</webjars-jquery-ui.version>
+    <webjars-jquery-ui.version>1.13.2</webjars-jquery-ui.version>
     <webjars-jquery.version>3.6.0</webjars-jquery.version>
     <thymeleaf-spring5.version>3.0.9.RELEASE</thymeleaf-spring5.version>
   </properties>
@@ -26,12 +26,12 @@
     <dependency>
       <groupId>com.squareup</groupId>
       <artifactId>square</artifactId>
-      <version>22.0.0.20220720</version>
+      <version>29.0.0.20230517</version>
     </dependency>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
-      <version>1.3.70</version>
+      <version>1.8.21</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
