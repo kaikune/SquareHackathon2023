@@ -152,14 +152,15 @@ public class Main {
     // Payment request that binds to the customer
     CreatePaymentRequest createPaymentRequest = new CreatePaymentRequest.Builder(
         tokenObject.getToken(),
-        tokenObject.getIdempotencyKey())
+        UUID.randomUUID().toString())
         .amountMoney(bodyAmountMoney)
         .locationId(squareLocationId)
         .build();
     
     //System.out.println("Source Id: " + tokenObject.getToken());
 
-    return paymentsApi.createPaymentAsync(createPaymentRequest)
+    return (
+      paymentsApi.createPaymentAsync(createPaymentRequest)
         .thenApply(result -> {
           // Create customer and add card to file
           createCustomer(tokenObject, result.getPayment().getId());
@@ -172,7 +173,8 @@ public class Main {
           System.out.println("Failed to make the request 1");
           System.out.printf("Exception: %s%n", e.getMessage());
           return new SquareResult("FAILURE", e.getErrors());
-        }).join();
+        }).join()
+    );
   }
 
   /**
@@ -206,7 +208,7 @@ public class Main {
 
   @PostMapping("/verify")
   @ResponseBody
-  void sendCheckoutRequest(String deviceId) {
+  SquareResult sendCheckoutRequest(String deviceId) {
     Money amountMoney = new Money.Builder()
       .amount(1L)
       .currency("USD")
@@ -234,15 +236,20 @@ public class Main {
       .build();
 
     TerminalApi terminalApi = squareClient.getTerminalApi();
-    terminalApi.createTerminalCheckoutAsync(body)
-      .thenAccept(result -> {
-        System.out.println("Checkout Request Success");
-      })
-      .exceptionally(exception -> {
-        System.out.println("Failed to make the checkout request");
-        System.out.println(String.format("Exception: %s", exception.getMessage()));
-        return null;
-      });
+
+    return (
+      terminalApi.createTerminalCheckoutAsync(body)
+        .thenApply(result -> {
+          System.out.println("Checkout Request Success");
+          return new SquareResult("SUCCESS", null);
+        })
+        .exceptionally(exception -> {
+          ApiException e = (ApiException) exception.getCause();
+          System.out.println("Failed to make the checkout request");
+          System.out.printf("Exception: %s%n", e.getMessage());
+          return new SquareResult("FAILURE", e.getErrors());
+        }).join()
+    );
   }
 
   /**

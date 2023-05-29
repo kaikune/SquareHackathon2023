@@ -10,7 +10,6 @@ public class TokenWrapper {
     private String email;
     private String venueId;
     private int seatNum;
-    private String idempotencyKey;
 
     public String getToken() {
         return token;
@@ -50,13 +49,5 @@ public class TokenWrapper {
 
     public void setSeatNum(int seatNum) {
       this.seatNum = seatNum;
-    }
-
-    public String getIdempotencyKey() {
-      return idempotencyKey;
-    }
-
-    public void setIdempotencyKey(String idempotencyKey) {
-      this.idempotencyKey = idempotencyKey;
     }
 }

@@ -27,15 +27,23 @@
     <!-- Seat elements will be generated here -->
   </div>
 <!-- Begin Payment Form -->
-  <form class="check-in-form" id="fast-checkout">
+  <form class="payment-form" id="fast-checkout">
     <div class="wrapper">
-      <button id="verify-button" type="button">Verify</button>
-      <span id="verify-flow-message"></span>
+      <input type="text" id="customer-name" placeholder="Name" required>
+      <input type="email" id="customer-email" placeholder="email@email.com" required>
+      <div id="card-container"></div>
+      <label class="container"> Acknowledge that your card will be saved on file
+        <input type="checkbox" id="permissions" checked="checked">
+        <span class="checkmark"></span>
+      </label>
+      
+      <button id="card-button" type="button">Pay with Card</button>
+      <span id="payment-flow-message"></span>
     </div>
   </form>
   <!-- End Payment Form -->
   <script src="js/venue.js"></script>
-  <script src="js/sq-verify.js"></script>
-
+  <script src="js/sq-card-pay.js"></script>
+  <script src="js/sq-payment-flow.js"></script>
 </body>
 </html>
