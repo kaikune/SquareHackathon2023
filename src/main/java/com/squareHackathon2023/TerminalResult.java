@@ -13,6 +13,7 @@ public class TerminalResult {
         return data.obj.deviceCode.deviceId;
     }
 
+
     public class Data {
         private String id;
         protected Obj obj;

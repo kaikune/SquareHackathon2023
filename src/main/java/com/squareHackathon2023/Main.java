@@ -279,6 +279,7 @@ public class Main {
     TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     // Check for if card has a ticket on it
     System.out.println("In getCardInfo()");
+    System.out.println(gson.toJson(result));
 
     if (result.getDeviceId() != null) {
       System.out.println(result.getDeviceId());
