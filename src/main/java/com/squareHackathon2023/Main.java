@@ -45,7 +45,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
-import io.github.cdimascio.dotenv.Dotenv;
 
 @Controller
 @SpringBootApplication
@@ -60,14 +59,13 @@ public class Main {
   private final Gson gson = new Gson();
 
   public Main() throws ApiException {
-    Dotenv dotenv = Dotenv.load();
-    squareEnvironment = mustLoadEnvironmentVariable(dotenv.get("ENVIRONMENT"));
-    squareAppId = mustLoadEnvironmentVariable(dotenv.get("SQUARE_APPLICATION_ID"));
-    squareLocationId = mustLoadEnvironmentVariable(dotenv.get("SQUARE_LOCATION_ID"));
+    squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));
+    squareAppId = mustLoadEnvironmentVariable(System.getenv("SQUARE_APPLICATION_ID"));
+    squareLocationId = mustLoadEnvironmentVariable(System.getenv("SQUARE_LOCATION_ID"));
 
     squareClient = new SquareClient.Builder()
         .environment(Environment.fromString(squareEnvironment))
-        .accessToken(mustLoadEnvironmentVariable(dotenv.get("SQUARE_ACCESS_TOKEN")))
+        .accessToken(mustLoadEnvironmentVariable(System.getenv("SQUARE_ACCESS_TOKEN")))
         .userAgentDetail("Ticketing") // Remove or replace this detail when building your own app
         .build();
   }
@@ -181,7 +179,7 @@ public class Main {
    * Controls the connection of a Square Terminal to the application.
    * @return SquareResult with the device code
    */
-  @PostMapping("/connect")
+  @GetMapping("/connect")
   @ResponseBody
   SquareResult connectToTerminal() {
     DevicesApi devicesApi = squareClient.getDevicesApi();

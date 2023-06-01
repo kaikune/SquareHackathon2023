@@ -12,7 +12,7 @@ window.payments = Square.payments(window.applicationId, window.locationId);
 window.verifyFlowMessageEl = document.getElementById('verify-flow-message');
 
 window.showSuccess = function(message) {
-    window.paFlowMessageEl.classList.add('success');
+    window.verifyFlowMessageEl.classList.add('success');
     window.verifyFlowMessageEl.classList.remove('error');
     window.verifyFlowMessageEl.innerText = message;
 }
@@ -41,30 +41,57 @@ async function CardVerify(buttonEl) {
     }
   
     buttonEl.addEventListener('click', eventHandler);
-  }  
+}  
 
 window.createVerification = async function(deviceId) {
     try {
-    const response = await fetch('/verify', {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: deviceId
-    });
+        const response = await fetch('/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: deviceId
+        });
 
-    const data = await response.json();
-    if (data.errors && data.errors.length > 0) {
-        if (data.errors[0].detail) {
-            window.showError(data.errors[0].detail);
+        const data = await response.json();
+        if (data.errors && data.errors.length > 0) {
+            if (data.errors[0].detail) {
+                window.showError(data.errors[0].detail);
+            } else {
+                window.showError('Verification Failed.');
+            }
         } else {
-            window.showError('Verification Failed.');
+            window.showSuccess('Verification Successful!');
         }
-    } else {
-        window.showSuccess('Verification Successful!');
-    }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error: ', error);
+    }
+}
+
+async function connectToTerminal() {
+    try {
+        const response = await fetch('/connect', {
+            method: 'GET',
+        });
+
+        const data = await response.json();
+        if (data.errors && data.errors.length > 0) {
+            if (data.errors[0].detail) {
+                window.showError(data.errors[0].detail);
+            } else {
+                window.showError('Pairing Failed.');
+            }
+        } else {
+            window.showSuccess('Pairing Successful!');
+        }
+
+        // Get the device code
+        let deviceCode = data.title;
+        console.log(deviceCode);
+
+        // TODO: Display code to user
+    } catch (error) {
+        console.error('Error: ', error);
     }
 }
   
