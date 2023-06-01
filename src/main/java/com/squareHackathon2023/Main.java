@@ -291,11 +291,8 @@ public class Main {
     String note = result.get("note").getAsString();
     System.out.println("Note: " + note);
 
-    // Test for check-in JSON
-    if (note.compareTo("Tap Here to check in") == 0) {
-      // Access the nested card details
-      JsonObject cardDetails = result.getAsJsonObject("payment")
-          .getAsJsonObject("card_details");
+    // Access the nested card details
+    JsonObject cardDetails = result.getAsJsonObject("card_details");
 
     // Extract the fingerprint
     String fingerprint = cardDetails.getAsJsonObject("card")
@@ -319,7 +316,6 @@ public class Main {
     else {
       System.out.println("Ignoring payment");
     }
-    
   }
 
   /**
