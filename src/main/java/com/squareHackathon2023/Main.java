@@ -372,6 +372,9 @@ public class Main {
 
   private boolean isCardOnFile(Customer customer, String fingerprint) {
     System.out.println("in isCardOnFile()");
+
+    System.out.println("customer: " + customer);
+    System.out.println("Cards: \n" + customer.getCards());
     // Retrieve the list of cards associated with the customer
     List<Card> cards = customer.getCards();
 
