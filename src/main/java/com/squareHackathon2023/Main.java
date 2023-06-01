@@ -340,9 +340,9 @@ public class Main {
               Seat currSeat = venue.findSeat(ticket.getSeat());
 
               System.out.println("Found customer");
-
+              
               // Check ticket for validity
-              if (ticket.getAuth() == currSeat.getAuth()) {
+              if (ticket.getAuth().equals(currSeat.getAuth())) {
                 System.out.printf("Ticket for seat %d Valid!\n", ticket.getSeat());
                 seat.set(ticket.getSeat());
               } else {
@@ -384,6 +384,7 @@ public class Main {
           if (result != null) {
             for (Card card : result.getCards()) {
               if (card.getFingerprint().equals(fingerprint)) {
+                System.out.println("Found Card!");
                 return true;
               }
             }
