@@ -22,7 +22,9 @@ window.showError = function(message) {
     window.verifyFlowMessageEl.classList.remove('success');
     window.verifyFlowMessageEl.innerText = message;
 }
-  
+
+window.deviceId = "";
+
 async function CardVerify(buttonEl) {
   
     async function eventHandler(event) {
@@ -43,14 +45,11 @@ async function CardVerify(buttonEl) {
     buttonEl.addEventListener('click', eventHandler);
 }  
 
-window.createVerification = async function(deviceId) {
+async function createVerification() {   // Get deviceId from somewhere
+    console.log("Verifying");
     try {
         const response = await fetch('/verify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: deviceId
+            method: 'GET'
         });
 
         const data = await response.json();
@@ -69,6 +68,7 @@ window.createVerification = async function(deviceId) {
 }
 
 async function connectToTerminal() {
+    console.log("Connecting");
     try {
         const response = await fetch('/connect', {
             method: 'GET',

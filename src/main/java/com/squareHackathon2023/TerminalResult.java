@@ -9,6 +9,9 @@ public class TerminalResult {
     public String getPaymentId() {
         return data.id;
     }
+    public String getDeviceId() {
+        return data.obj.deviceCode.deviceId;
+    }
 
     public class Data {
         private String id;
@@ -16,6 +19,7 @@ public class TerminalResult {
 
         public class Obj {
             protected Payment payment;
+            protected DeviceCode deviceCode;
 
             public class Payment {
                 protected CardDetails card;
@@ -24,6 +28,11 @@ public class TerminalResult {
                     private String fingerprint;
                 }
             }
+            
+            public class DeviceCode {
+                protected String deviceId;
+            }
+
         }
     }
 }

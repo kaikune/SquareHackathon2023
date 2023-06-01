@@ -45,6 +45,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+
 
 @Controller
 @SpringBootApplication
@@ -57,6 +60,7 @@ public class Main {
 
   protected final Venue venue = new Venue("Concert Central", "Ice Spice", 10);  // TODO: Would need to change if implementing multiple venues
   private final Gson gson = new Gson();
+  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
   public Main() throws ApiException {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));
@@ -204,9 +208,23 @@ public class Main {
       }).join();
   }
 
-  @PostMapping("/verify")
+  @PostMapping("/device")
   @ResponseBody
-  SquareResult sendCheckoutRequest(String deviceId) {
+  void getDeviceId(@RequestBody String deviceJson) {
+    TerminalResult result = gson.fromJson(deviceJson, TerminalResult.class);
+
+    deviceId = result.getDeviceId();
+    System.out.println("Device Id: " + deviceId);
+  }
+
+  /**
+   * Creates checkout request for the connected terminal
+   * @param deviceId
+   * @return
+   */
+  @GetMapping("/verify")
+  @ResponseBody
+  SquareResult sendCheckoutRequest() {
     Money amountMoney = new Money.Builder()
       .amount(1L)
       .currency("USD")
@@ -261,7 +279,6 @@ public class Main {
   @ResponseBody
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
-
     // Check for if card has a ticket on it
     int seatNum = validateCard(result.getFingerprint());
 
