@@ -57,6 +57,8 @@ public class Venue {
     }
 
     public Seat findSeat(int seatNum) {
+        System.out.println("Looking for seat: " + seatNum);
+        
         try {
             return seats.get(seatNum);
         }

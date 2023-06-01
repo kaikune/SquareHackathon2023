@@ -280,10 +280,12 @@ public class Main {
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     // Check for if card has a ticket on it
+    System.out.println(paymentJson);
     int seatNum = validateCard(result.getFingerprint());
-
+    
     //Check in attendee
     if (seatNum != -1) {
+      System.out.println("Seat found!");
       venue.findSeat(seatNum).arrive();
     } else {
       System.out.println("Seat not found");
