@@ -45,8 +45,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
 
 
 @Controller
@@ -280,7 +278,8 @@ public class Main {
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     // Check for if card has a ticket on it
-    System.out.println(paymentJson);
+    System.out.println("In getCardInfo()");
+    System.out.println(result.getDeviceId());
     int seatNum = validateCard(result.getFingerprint());
     
     //Check in attendee
