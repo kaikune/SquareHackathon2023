@@ -172,7 +172,7 @@ public class Main {
         })
         .exceptionally(exception -> {
           ApiException e = (ApiException) exception.getCause();
-          System.out.println("Failed to make the request 1");
+          System.out.println("Failed to make the create payment request");
           System.out.printf("Exception: %s%n", e.getMessage());
           return new SquareResult("FAILURE", e.getErrors());
         }).join()
@@ -287,7 +287,6 @@ public class Main {
         .getAsJsonObject("object")
         .getAsJsonObject("payment");
 
-    System.out.println(result);
     String note = result.get("note").getAsString();
     System.out.println("Note: " + note);
 
@@ -355,7 +354,7 @@ public class Main {
         }
       })
       .exceptionally(exception -> {
-        System.out.println("Failed to make the request");
+        System.out.println("Failed to make the list customers request");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         return null;
       });
@@ -410,7 +409,7 @@ public class Main {
         System.out.println("Card Request Success!");
       })
       .exceptionally(exception -> {
-        System.out.println("Failed to make the request 2");
+        System.out.println("Failed to make the create card request");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         return null;
       });
@@ -457,7 +456,7 @@ public class Main {
         createCard(tokenObject, customerId, paymentId);
       })
       .exceptionally(exception -> {
-        System.out.println("Failed to make the request 3");
+        System.out.println("Failed to make the create customer request");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         System.out.println("Check if email is valid");
         return null;
@@ -477,7 +476,7 @@ public class Main {
           return result;
         })
         .exceptionally(exception -> {
-          System.out.println("Failed to make the request 4");
+          System.out.println("Failed to make the retrieve locations request");
           System.out.printf("Exception: %s%n", exception.getMessage());
           return null;
         });
