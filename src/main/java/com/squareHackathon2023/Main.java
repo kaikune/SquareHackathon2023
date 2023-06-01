@@ -280,7 +280,6 @@ public class Main {
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     // TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     System.out.println("In getCardInfo()");
-    System.out.println(gson.toJson(result));
 
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
