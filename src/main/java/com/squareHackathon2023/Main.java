@@ -283,7 +283,9 @@ public class Main {
 
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
-    result = result.getAsJsonObject("data").getAsJsonObject("object");
+    result = result.getAsJsonObject("data")
+        .getAsJsonObject("object")
+        .getAsJsonObject("payment");
 
     System.out.println(result);
     String note = result.get("note").getAsString();
@@ -295,13 +297,15 @@ public class Main {
       JsonObject cardDetails = result.getAsJsonObject("payment")
           .getAsJsonObject("card_details");
 
-      // Extract the fingerprint
-      String fingerprint = cardDetails.getAsJsonObject("card")
-          .get("fingerprint")
-          .getAsString();
+    // Extract the fingerprint
+    String fingerprint = cardDetails.getAsJsonObject("card")
+        .get("fingerprint")
+        .getAsString();
 
-      System.out.println("Fingerprint: " + fingerprint);
+    System.out.println("Fingerprint: " + fingerprint);
 
+    // Test for check-in JSON
+    if (note.compareTo("Tap Here to check in") == 0) {
       int seatNum = validateCard(fingerprint);
       
       //Check in attendee
