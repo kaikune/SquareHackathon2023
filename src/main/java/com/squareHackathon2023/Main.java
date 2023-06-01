@@ -45,6 +45,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 
 @Controller
@@ -276,14 +278,30 @@ public class Main {
   @PostMapping("/process-verification")
   @ResponseBody
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
-    TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
-    // Check for if card has a ticket on it
+    // TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     System.out.println("In getCardInfo()");
     System.out.println(gson.toJson(result));
 
-    if (result.getDeviceId() != null) {
-      System.out.println(result.getDeviceId());
-      int seatNum = validateCard(result.getFingerprint());
+    // Parse the JSON string
+    JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
+    result = result.getAsJsonObject("data").getAsJsonObject("object");
+
+    System.out.println(result);
+
+    // Test for check-in JSON
+    if (result.getAsJsonObject("note").toString().compareTo("Tap Here to check in") == 0) {
+      // Access the nested card details
+      JsonObject cardDetails = result.getAsJsonObject("payment")
+          .getAsJsonObject("card_details");
+
+      // Extract the fingerprint
+      String fingerprint = cardDetails.getAsJsonObject("card")
+          .get("fingerprint")
+          .getAsString();
+
+      System.out.println("Fingerprint: " + fingerprint);
+
+      int seatNum = validateCard(fingerprint);
       
       //Check in attendee
       if (seatNum != -1) {
