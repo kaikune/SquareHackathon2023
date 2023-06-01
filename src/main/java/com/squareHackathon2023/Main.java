@@ -371,23 +371,34 @@ public class Main {
   }
 
   private boolean isCardOnFile(Customer customer, String fingerprint) {
-    System.out.println("in isCardOnFile()");
+    CardsApi cardsApi = squareClient.getCardsApi();
 
+    System.out.println("in isCardOnFile()");
     System.out.println("customer: " + customer);
-    System.out.println("Cards: \n" + customer.getCards());
+
     // Retrieve the list of cards associated with the customer
-    List<Card> cards = customer.getCards();
+    return (
+      cardsApi.listCardsAsync(null,customer.getId(),null,null,null)
+        .thenApply(result -> {
+          System.out.println("Success!\n" + result.getCards());
+          if (result != null) {
+            for (Card card : result.getCards()) {
+              if (card.getFingerprint().equals(fingerprint)) {
+                return true;
+              }
+            }
+          }
+      
+          return false;
+        })
+        .exceptionally(exception -> {
+          System.out.println("Failed to make the list cards request");
+          System.out.println(String.format("Exception: %s", exception.getMessage()));
+          return false;
+        }).join()
+    );
 
     // Check if the received card data matches any of the cards on file
-    if (cards != null) {
-      for (Card card : cards) {
-        if (card.getFingerprint().equals(fingerprint)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 
   /**
