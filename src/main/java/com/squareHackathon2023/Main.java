@@ -332,7 +332,7 @@ public class Main {
       CompletableFuture<Void> future = customersApi.listCustomersAsync(null, null, null, null)
       .thenAccept(result -> {
         System.out.println("List Customers Success!");
-  
+        System.out.println("Customers: \n" + result.getCustomers());
         if (result.getCustomers() != null) {
           for (Customer customer : result.getCustomers()) {
             if (isCardOnFile(customer, fingerprint)) {
@@ -351,6 +351,8 @@ public class Main {
               return;
             }
           }
+        } else {
+          System.out.println("No customers found");
         }
       })
       .exceptionally(exception -> {
