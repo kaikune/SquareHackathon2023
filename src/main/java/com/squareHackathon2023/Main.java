@@ -356,8 +356,9 @@ public class Main {
         }
       })
       .exceptionally(exception -> {
+        ApiException e = (ApiException) exception.getCause();
         System.out.println("Failed to make the list customers request");
-        System.out.println(String.format("Exception: %s", exception.getMessage()));
+        System.out.println(String.format("Exception: %s", e.getMessage()));
         return null;
       });
       future.join();
@@ -370,6 +371,7 @@ public class Main {
   }
 
   private boolean isCardOnFile(Customer customer, String fingerprint) {
+    System.out.println("in isCardOnFile()");
     // Retrieve the list of cards associated with the customer
     List<Card> cards = customer.getCards();
 
