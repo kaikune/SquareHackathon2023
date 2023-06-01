@@ -300,8 +300,11 @@ public class Main {
   public int validateCard(String fingerprint) {
     CustomersApi customersApi = squareClient.getCustomersApi();
     AtomicInteger seat = new AtomicInteger(-1);
-  
-    CompletableFuture<Void> future = customersApi.listCustomersAsync(null, null, null, null)
+    
+    System.out.println("in validateCard()");
+
+    try {
+      CompletableFuture<Void> future = customersApi.listCustomersAsync(null, null, null, null)
       .thenAccept(result -> {
         System.out.println("List Customers Success!");
   
@@ -330,8 +333,11 @@ public class Main {
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         return null;
       });
-  
-    future.join();
+      future.join();
+      
+    } catch (Exception e) {
+      System.out.println(String.format("Exception: %s", e.getMessage()));
+    }
   
     return seat.get();
   }

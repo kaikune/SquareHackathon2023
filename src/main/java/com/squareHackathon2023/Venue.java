@@ -83,7 +83,7 @@ public class Venue {
         }
         
         // Debug
-        seats.get(2).arrive();
+        //seats.get(2).arrive();
     }
 
     public String toString() {
