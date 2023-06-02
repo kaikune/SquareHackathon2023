@@ -60,6 +60,8 @@ public class Main {
 
   protected final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
   private final Gson gson = new Gson();
+  private final SSEController sseController = new SSEController();
+
   private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
   public Main() throws ApiException {
@@ -117,7 +119,7 @@ public class Main {
   }
 
   /**
-   * Returns status of the venue. To be called repeatedly by frontend.
+   * Returns status of the venue To be called repeatedly by frontend.
    */
   @GetMapping("/venue")
   @ResponseBody
@@ -321,6 +323,7 @@ public class Main {
     }
     else {
       System.out.println("Ignoring payment");
+      return;
     }
   }
 
@@ -339,7 +342,7 @@ public class Main {
       CompletableFuture<Void> future = customersApi.listCustomersAsync(null, null, null, null)
       .thenAccept(result -> {
         System.out.println("List Customers Success!");
-        System.out.println("Customers: \n" + result.getCustomers());
+        //System.out.println("Customers: \n" + result.getCustomers());
         if (result.getCustomers() != null) {
           for (Customer customer : result.getCustomers()) {
             if (isCardOnFile(customer, fingerprint)) {
@@ -381,13 +384,13 @@ public class Main {
     CardsApi cardsApi = squareClient.getCardsApi();
 
     System.out.println("in isCardOnFile()");
-    System.out.println("customer: " + customer);
+    //System.out.println("customer: " + customer);
 
     // Retrieve the list of cards associated with the customer
     return (
       cardsApi.listCardsAsync(null,customer.getId(),null,null,null)
         .thenApply(result -> {
-          System.out.println("Success!\n" + result.getCards());
+          //System.out.println("Success!\n" + result.getCards());
           if (result != null) {
             for (Card card : result.getCards()) {
               if (card.getFingerprint().equals(fingerprint)) {
@@ -466,6 +469,7 @@ public class Main {
       System.out.println(note);
 
       seat.sell();
+      sseController.notifySeatAvailabilityChange(seat);
     }
 
     CreateCustomerRequest customer = new CreateCustomerRequest.Builder()

@@ -79,7 +79,7 @@ public class Venue {
         this.totalSeats = totalSeats;
 
         for(int i = 0; i < totalSeats; i++) {
-            seats.put(i, new Seat());   // TODO: Edit to create price for seats
+            seats.put(i, new Seat(i, 100L));   // TODO: Edit to create price for seats
         }
         
         // Debug
