@@ -1,6 +1,9 @@
 var chosenSeat = null;
 var venueId;
 
+// Generate seat elements dynamically
+var seatsContainer = document.getElementById("seats-container");
+
 /**
  * Receives all venue information from the server
  */
@@ -17,6 +20,7 @@ var venueId;
         const venue = await response.json();
         console.log(venue);
         venueId = venue.venueId;
+        setEventName(venue.venueName, venue.eventName);
         generateSeats(venue.seats);
 
     } catch (error) {
@@ -30,15 +34,15 @@ var venueId;
  */
 function generateSeats(seats) {
     // Generate seat elements dynamically
-    var venue = document.getElementById("venue");
-
+    var seatsContainer = document.getElementById("seats-container");
+    
     for (var seatNum in seats) {
         var seat = seats[seatNum];
         var seatEl = document.createElement("div");
 
         seatEl.classList.add("seat");
         seatEl.textContent = seatNum;
-
+        
         // Check if the seat is filled or sold
         if (seat.arrived) {
             seatEl.classList.add("arrived");
@@ -47,6 +51,9 @@ function generateSeats(seats) {
             seatEl.classList.add("sold");
             seatEl.setAttribute("title", "Seat is sold");
         }
+
+        // Add price as a data attribute
+        seatEl.setAttribute("data-price", "$" + seat.price);
 
         // Add click event listener to select the seat
         seatEl.addEventListener("click", function() {
@@ -68,6 +75,11 @@ function generateSeats(seats) {
             }
         });
 
-        venue.appendChild(seatEl);
+        seatsContainer.appendChild(seatEl);
     }
+}
+
+function setEventName(venueName, eventName) {
+    var eventNameContainer = document.getElementById("event-name");
+    eventNameContainer.textContent = eventName + " at " + venueName;
 }

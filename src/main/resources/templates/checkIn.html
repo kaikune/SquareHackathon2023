@@ -16,29 +16,30 @@
     These styles can live in a separate .css file. They're just here to keep this
     example to a single file.
   -->
-  <link rel="stylesheet" type="text/css" href="css/sq-payment.css">
   <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
-<!-- TODO: Add billing address field -->
-
 <body>
-  <div id="venue">
-    <!-- Seat elements will be generated here -->
+  <div class="top-bar">
+    <div class="button-container">
+      <button class="navigation-button" onclick="window.location.href='/'">Buy Tickets</button>
+    </div>
+    <div class="pair-device">
+      <button onclick="connectToTerminal()">Pair Device</button>
+    </div>
   </div>
-  <div>
-    <button onclick="connectToTerminal()">Pair Device</button>
-  </div>
-<!-- Begin Payment Form -->
+  <h2 class="header">Check In</h2>
+  <h2 id="event-name"></h2>
+  <div id="seats-container" class="venue-view"></div>
+  <!-- Begin Check-In Form -->
   <form class="check-in-form" id="fast-checkout">
-    <div class="wrapper">
-      <button onclick="createVerification()" type="button">Verify</button>  
+    <div class="verify-container">
+      <button onclick="createVerification()" type="button">Verify</button>
       <span id="verify-flow-message"></span>
     </div>
   </form>
-  <!-- End Payment Form -->
+  <!-- End Check-In Form -->
   <script src="js/venue.js"></script>
   <script src="js/sq-verify.js"></script>
-
 </body>
 </html>

@@ -16,32 +16,40 @@
     These styles can live in a separate .css file. They're just here to keep this
     example to a single file.
   -->
-  <link rel="stylesheet" type="text/css" href="css/sq-payment.css">
   <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
-<!-- TODO: Add billing address field -->
-
 <body>
-  <div id="venue">
-    <!-- Seat elements will be generated here -->
+  <div class="top-bar">
+    <div class="button-container">
+      <button class="navigation-button" onclick="window.location.href='/check-in'">Check-In</button>
+    </div>
   </div>
-<!-- Begin Payment Form -->
+  <h2 class="header">Concertmaster</h2>
+
+  <h2 style="text-align: center;" id="event-name"></h2>
+
+  <!-- Begin Payment Form -->
   <form class="payment-form" id="fast-checkout">
     <div class="wrapper">
+      <h1>Ticket Purchase</h1>
       <input type="text" id="customer-name" placeholder="Name" required>
-      <input type="email" id="customer-email" placeholder="email@email.com" required>
+      <input type="email" id="customer-email" placeholder="Email" required>
       <div id="card-container"></div>
-      <label class="container"> Acknowledge that your card will be saved on file
+      <label class="container">
         <input type="checkbox" id="permissions" checked="checked">
         <span class="checkmark"></span>
+        Acknowledge that your card will be saved on file
       </label>
-      
       <button id="card-button" type="button">Pay with Card</button>
       <span id="payment-flow-message"></span>
     </div>
   </form>
   <!-- End Payment Form -->
+
+  <!-- Seat information -->
+  <div id="seats-container" class="venue-view"></div>
+
   <script src="js/venue.js"></script>
   <script src="js/sq-card-pay.js"></script>
   <script src="js/sq-payment-flow.js"></script>

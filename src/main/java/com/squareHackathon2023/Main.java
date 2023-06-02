@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.List;
+//import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.boot.SpringApplication;
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
+//import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 
@@ -58,7 +58,7 @@ public class Main {
   protected final String squareAppId;
   protected final String squareEnvironment;
 
-  protected final Venue venue = new Venue("Concert Central", "Ice Spice", 10);  // TODO: Would need to change if implementing multiple venues
+  protected final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
   private final Gson gson = new Gson();
   private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
@@ -208,25 +208,33 @@ public class Main {
       }).join();
   }
 
+  /**
+   * Gets deviceId from terminal.paired webhook
+   * @param deviceJson
+   */
   @PostMapping("/device")
   @ResponseBody
   void getDeviceId(@RequestBody String deviceJson) {
-    TerminalResult result = gson.fromJson(deviceJson, TerminalResult.class);
+    JsonObject result = gson.fromJson(deviceJson, JsonObject.class);
 
-    deviceId = result.getDeviceId();
+    deviceId = result.getAsJsonObject("data")
+        .getAsJsonObject("object")
+        .getAsJsonObject("device_code")
+        .get("device_id")
+        .getAsString();
+      
     System.out.println("Device Id: " + deviceId);
   }
 
   /**
    * Creates checkout request for the connected terminal
-   * @param deviceId
    * @return
    */
   @GetMapping("/verify")
   @ResponseBody
   SquareResult sendCheckoutRequest() {
     Money amountMoney = new Money.Builder()
-      .amount(1L)
+      .amount(1L) // Can't charge 0
       .currency("USD")
       .build();
 
@@ -278,7 +286,6 @@ public class Main {
   @PostMapping("/process-verification")
   @ResponseBody
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
-    // TerminalResult result = gson.fromJson(paymentJson, TerminalResult.class);
     System.out.println("In getCardInfo()");
 
     // Parse the JSON string
