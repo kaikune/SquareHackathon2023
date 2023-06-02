@@ -28,18 +28,18 @@ window.deviceId = "";
 async function CardVerify(buttonEl) {
   
     async function eventHandler(event) {
-      // Clear any existing messages
-      window.verifyFlowMessageEl.innerText = '';
-  
-      try {
-        window.createVerification(result.token, chosenSeat);
-      } catch (e) {
-        if (e.message) {
-            window.showError(`Error: ${e.message}`);
-        } else {
-            window.showError('Something went wrong');
+        // Clear any existing messages
+        window.verifyFlowMessageEl.innerText = '';
+
+        try {
+            window.createVerification(result.token, chosenSeat);
+        } catch (e) {
+            if (e.message) {
+                window.showError(`Error: ${e.message}`);
+            } else {
+                window.showError('Something went wrong');
+            }
         }
-      }
     }
   
     buttonEl.addEventListener('click', eventHandler);
@@ -65,6 +65,7 @@ async function createVerification() {   // Get deviceId from somewhere
     } catch (error) {
         console.error('Error: ', error);
     }
+    window.location.reload();
 }
 
 async function connectToTerminal() {
