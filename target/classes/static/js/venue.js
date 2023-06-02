@@ -22,10 +22,6 @@ var seatsContainer = document.getElementById("seats-container");
         venueId = venue.venueId;
         setEventName(venue.venueName, venue.eventName);
         generateSeats(venue.seats);
-
-        // Start SSE connection
-        startSSEConnection();
-
     } catch (error) {
         console.error('Error:', error);
     }
@@ -87,31 +83,3 @@ function setEventName(venueName, eventName) {
     eventNameContainer.textContent = eventName + " at " + venueName;
 }
 
-/**
- * Starts the SSE connection to receive seat update events
- */
-function startSSEConnection() {
-    var eventSource = new EventSource("/seat-availability");
-
-    eventSource.onmessage = function (event) {
-        var seatData = JSON.parse(event.data);
-        var seatEl = document.querySelector('.seat:nth-child(' + (seatData.num) + ')');
-
-        if (seatEl) {
-            if (seatData.arrived) {
-                seatEl.classList.add("arrived");
-                seatEl.setAttribute("title", "Seat is filled");
-            } else if (seatData.sold) {
-                seatEl.classList.add("sold");
-                seatEl.setAttribute("title", "Seat is sold");
-            } else {
-                seatEl.classList.remove("arrived", "sold");
-                seatEl.removeAttribute("title");
-            }
-        }
-    };
-
-    eventSource.onerror = function () {
-        console.error("Error occurred in SSE connection");
-    };
-}

@@ -58,9 +58,8 @@ public class Main {
   protected final String squareAppId;
   protected final String squareEnvironment;
 
-  protected final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
+  protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
   private final Gson gson = new Gson();
-  private final SSEController sseController = new SSEController();
 
   private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
@@ -469,7 +468,6 @@ public class Main {
       System.out.println(note);
 
       seat.sell();
-      sseController.notifySeatAvailabilityChange(seat);
     }
 
     CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
