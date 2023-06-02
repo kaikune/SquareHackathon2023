@@ -1,7 +1,5 @@
 var chosenSeat = null;
 var venueId;
-
-// Generate seat elements dynamically
 var seatsContainer = document.getElementById("seats-container");
 
 /**

@@ -61,7 +61,7 @@ public class Main {
   protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
   private final Gson gson = new Gson();
 
-  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
+  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f"; // Hardcoded deviceId;
 
   public Main() throws ApiException {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));

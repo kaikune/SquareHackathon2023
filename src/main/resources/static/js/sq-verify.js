@@ -1,7 +1,6 @@
 /**
  * TODO: Change to create terminal checkout and then refresh page on successful checkout (webhook)
  */
-
 async function SquareVerifyFlow() {
     // Create card payment object and attach to page
     CardVerify(document.getElementById('card-container'), document.getElementById('card-button'));
