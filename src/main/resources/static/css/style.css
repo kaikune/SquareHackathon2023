@@ -150,6 +150,7 @@ input[type="email"] {
   height: 20px;
   display: block;
   font-size: 14px;
+  color: blue;
 }
 
 #payment-flow-message.error {
@@ -351,6 +352,15 @@ input[type="email"] {
   color: #fff;
   border-radius: 8px;
   border: none;
+}
+
+#device-code {
+  width: 100%;
+  margin-top: 11px;
+  margin-bottom: 11px;
+  height: 20px;
+  display: block;
+  font-size: 14px;
 }
 
 .button-container {

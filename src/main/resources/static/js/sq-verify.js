@@ -1,6 +1,3 @@
-/**
- * TODO: Change to create terminal checkout and then refresh page on successful checkout (webhook)
- */
 async function SquareVerifyFlow() {
     // Create card payment object and attach to page
     CardVerify(document.getElementById('card-container'), document.getElementById('card-button'));
@@ -9,6 +6,7 @@ async function SquareVerifyFlow() {
 window.payments = Square.payments(window.applicationId, window.locationId);
 
 window.verifyFlowMessageEl = document.getElementById('verify-flow-message');
+window.deviceCodeEl = document.getElementById('device-code');
 
 window.showSuccess = function(message) {
     window.verifyFlowMessageEl.classList.add('success');
@@ -20,6 +18,11 @@ window.showError = function(message) {
     window.verifyFlowMessageEl.classList.add('error');
     window.verifyFlowMessageEl.classList.remove('success');
     window.verifyFlowMessageEl.innerText = message;
+}
+
+window.showDeviceCode = function(code) {
+    window.deviceCodeEl.classList.add('Device-Code');
+    window.deviceCodeEl.innerText = 'Device Code: ' + code;
 }
 
 window.deviceId = "";
@@ -79,15 +82,17 @@ async function connectToTerminal() {
             if (data.errors[0].detail) {
                 window.showError(data.errors[0].detail);
             } else {
-                window.showError('Pairing Failed.');
+                window.showError('Failure fetching device code');
             }
         } else {
-            window.showSuccess('Pairing Successful!');
+            window.showSuccess('Device code Aquired');
         }
 
         // Get the device code
         let deviceCode = data.title;
         console.log(deviceCode);
+        window.showDeviceCode(deviceCode);
+        alert("Please Input this device code into your Square terminal: " + deviceCode);
 
         // TODO: Display code to user
     } catch (error) {

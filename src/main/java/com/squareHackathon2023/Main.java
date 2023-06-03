@@ -316,8 +316,10 @@ public class Main {
       if (seatNum != -1) {
         System.out.println("Seat found!");
         venue.findSeat(seatNum).arrive();
+        return;
       } else {
         System.out.println("Seat not found");
+        return;
       }
     }
     else {
