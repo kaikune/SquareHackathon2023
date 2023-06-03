@@ -4,6 +4,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.UUID;
+import java.util.Random;
 
 /**
  * Venue Class that holds total seats, venueId, and a dictionary with an integer key (seat number) and String value (authentication Id to match customer's note field)
@@ -76,10 +77,13 @@ public class Venue {
      * @param totalSeats
      */
     public void fill(int totalSeats) {
+        Random random = new Random();
         this.totalSeats = totalSeats;
 
         for(int i = 0; i < totalSeats; i++) {
-            seats.put(i, new Seat(i, 100L));   // TODO: Edit to create price for seats
+            // Random prices for development
+            long price = random.nextInt(100) + 70;
+            seats.put(i, new Seat(i, price)); 
         }
         
         // Debug

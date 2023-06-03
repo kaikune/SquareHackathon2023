@@ -142,8 +142,6 @@ public class Main {
     RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
     String currency = locationResponse.getLocation().getCurrency();
 
-    // TODO: Add billing address here and in frontend
-
     Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
 
     // Set price of ticket
@@ -512,4 +510,3 @@ public class Main {
         });
   }
 }
-

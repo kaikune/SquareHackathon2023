@@ -241,6 +241,23 @@ input[type="email"] {
   visibility: visible;
 }
 
+.rectangle {
+  width: 500px;
+  height: 150px;
+  background-color: #99ccff; /* Replace with your desired background color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff; /* Replace with your desired label color */
+  font-size: 24px; /* Replace with your desired label font size */
+  margin: 0px auto;
+  margin-top: 50px;
+}
+
+.label {
+  text-transform: uppercase;
+}
+
 /* Check-in page */
 .top-bar {
   display: flex;
