@@ -54,7 +54,7 @@ public class Main {
   protected final String squareEnvironment;
 
 
-  private static CompletableFuture<String> seated = null;
+  private static CompletableFuture<String> seated = new CompletableFuture<>();
   
   // Hardcoded event for testing
   protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);
@@ -323,8 +323,8 @@ public class Main {
       }
     }
     else {
-      System.out.println("Ignoring payment");
-      seated.complete(null);
+      System.out.println("Ignoring");
+      seated.complete("FAILURE");
       return;
     }
   }
@@ -335,13 +335,14 @@ public class Main {
     // Get seated
     CompletableFuture<String> checkSeated = seated;
 
-    // Set seated back to null
-    seated = null;
+    // Set seated back to original state
+    seated = new CompletableFuture<String>();
 
     if (checkSeated != null) {
       System.out.println("Waiting for card info...");
       return new SquareResult(checkSeated.get(), null); // This will block until the future is completed
     } else {
+      System.out.println("checkSeated = not good");
       return new SquareResult("FAILURE", null);
     }
   }

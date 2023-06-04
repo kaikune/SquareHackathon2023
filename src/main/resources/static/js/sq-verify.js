@@ -60,9 +60,17 @@ async function createVerification() {   // Get deviceId from somewhere
                 window.showError(data.errors[0].detail);
             } else {
                 window.showError('Checkout Creation Failed.');
+<<<<<<< HEAD
             }
         } else {
             window.showSuccess('Checkout Creation Successful!');
+=======
+                console.log('Checkout failure');
+            }
+        } else {
+            window.showSuccess('Checkout Creation Successful!');
+            console.log('Checkout success');
+>>>>>>> a3c9fd8 (Implemented Errors on frontend)
         }
     } catch (error) {
         console.error('Error: ', error);
