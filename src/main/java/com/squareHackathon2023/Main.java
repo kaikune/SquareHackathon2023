@@ -32,6 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
@@ -40,6 +42,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -52,6 +56,7 @@ public class Main {
   protected final String squareLocationId;
   protected final String squareAppId;
   protected final String squareEnvironment;
+
 
 
   private static CompletableFuture<String> seated = new CompletableFuture<>();
@@ -83,7 +88,7 @@ public class Main {
    * @param value
    * @return
    */
-  private String mustLoadEnvironmentVariable(String value) {
+  protected static String mustLoadEnvironmentVariable(String value) {
     if (value == null || value.length() == 0) {
       throw new IllegalStateException(
           String.format("An environment variable is missing"));
@@ -214,6 +219,25 @@ public class Main {
   @PostMapping("/device")
   @ResponseBody
   void getDeviceId(@RequestBody String deviceJson) {
+    // Get the HttpServletRequest object
+    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+    // Check if attributes is null
+    if (attributes == null) {
+      System.out.println("ServletRequestAttributes is null");
+      return;
+    }
+    HttpServletRequest request = attributes.getRequest();
+
+    // Get the X-Square-Signature header from the request
+    String signatureHeader = request.getHeader("X-Square-Signature");
+
+    // Verify the webhook signature
+    if (!WebhookValidator.validateWebhook(signatureHeader, deviceJson)) {
+      // Signature is not valid, reject the request
+      System.out.println("Invalid webhook signature");
+      return;
+    }
     JsonObject result = gson.fromJson(deviceJson, JsonObject.class);
 
     deviceId = result.getAsJsonObject("data")
@@ -287,6 +311,26 @@ public class Main {
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     System.out.println("Recieved payment.created webhook");
 
+    // Get the HttpServletRequest object
+    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+    // Check if attributes is null
+    if (attributes == null) {
+      System.out.println("ServletRequestAttributes is null");
+      return;
+    }
+    HttpServletRequest request = attributes.getRequest();
+
+    // Get the X-Square-Signature header from the request
+    String signatureHeader = request.getHeader("X-Square-Signature");
+
+    // Verify the webhook signature
+    if (!WebhookValidator.validateWebhook(signatureHeader, paymentJson)) {
+      // Signature is not valid, reject the request
+      System.out.println("Invalid webhook signature");
+      return;
+    }
+
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
     result = result.getAsJsonObject("data")
@@ -313,7 +357,7 @@ public class Main {
       //Check in attendee
       if (seatNum != -1) {
         System.out.println("Seat found!");
-        seated.complete("Seat #" + seatNum + "found");
+        seated.complete("Seat #" + seatNum + " verified");
         venue.findSeat(seatNum).arrive();
         return;
       } else {
