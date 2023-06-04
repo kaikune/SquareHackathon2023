@@ -16,7 +16,7 @@ var seatsContainer = document.getElementById("seats-container");
         }
 
         const venue = await response.json();
-        console.log(venue);
+        //console.log(venue);
         venueId = venue.venueId;
         setEventName(venue.venueName, venue.eventName);
         generateSeats(venue.seats);
@@ -76,6 +76,11 @@ function generateSeats(seats) {
     }
 }
 
+/**
+ * Displays the event name and venue on the page
+ * @param {*} venueName 
+ * @param {*} eventName 
+ */
 function setEventName(venueName, eventName) {
     var eventNameContainer = document.getElementById("event-name");
     eventNameContainer.textContent = eventName + " at " + venueName;

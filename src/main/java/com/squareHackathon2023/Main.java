@@ -23,16 +23,13 @@ import com.squareup.square.api.DevicesApi;
 import com.squareup.square.api.CardsApi;
 import com.squareup.square.api.TerminalApi;
 import com.squareup.square.models.*;
-// import com.squareup.square.utilities.JsonObject;
 import com.squareup.square.SquareClient;
 import com.squareup.square.exceptions.ApiException;
 
-// import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-//import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.boot.SpringApplication;
@@ -45,23 +42,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
-//import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 
 @Controller
 @SpringBootApplication
-//@RequestMapping("/ticket-selling/") // Set the base URL
 public class Main {
   protected final SquareClient squareClient;
   protected final String squareLocationId;
   protected final String squareAppId;
   protected final String squareEnvironment;
 
-  protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);  // TODO: Would need to change if implementing multiple venues
+  // Hardcoded event for testing
+  protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);
   private final Gson gson = new Gson();
 
-  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f"; // Hardcoded deviceId;
+  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f"; // Hardcoded deviceId for testing
 
   public Main() throws ApiException {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));
@@ -71,7 +67,7 @@ public class Main {
     squareClient = new SquareClient.Builder()
         .environment(Environment.fromString(squareEnvironment))
         .accessToken(mustLoadEnvironmentVariable(System.getenv("SQUARE_ACCESS_TOKEN")))
-        .userAgentDetail("Ticketing") // Remove or replace this detail when building your own app
+        .userAgentDetail("ConcertMaster")
         .build();
   }
 
@@ -79,6 +75,11 @@ public class Main {
     SpringApplication.run(Main.class, args);
   }
 
+  /**
+   * Validates an environment variable
+   * @param value
+   * @return
+   */
   private String mustLoadEnvironmentVariable(String value) {
     if (value == null || value.length() == 0) {
       throw new IllegalStateException(
@@ -407,8 +408,6 @@ public class Main {
           return false;
         }).join()
     );
-
-    // Check if the received card data matches any of the cards on file
   }
 
   /**
@@ -422,7 +421,6 @@ public class Main {
 
     Card card = new Card.Builder()
       .cardholderName(tokenObject.getName())
-      //.billingAddress("Where to get billing address")
       .customerId(customerId)
       .build();
     
@@ -453,12 +451,6 @@ public class Main {
 
     Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
     String note = "No ticket";
-
-    // Debug prints
-    // System.out.printf("Seat #: %s vs. token seat: %s\n", tokenObject.getSeatNum(), seat);
-    // System.out.printf("Venue #: %s vs. venue: %s\n", tokenObject.getVenueId(), venue.getVenueId());
-    // System.out.println("Sold? " + seat.isSold());
-    // System.out.println("auth: " + seat.getAuth());
 
     // Venue matches, seat exists, and seat is still for sale
     if (venue.getVenueId().equals(tokenObject.getVenueId()) && seat != null && !seat.isSold()) {

@@ -81,7 +81,7 @@ public class Venue {
         this.totalSeats = totalSeats;
 
         for(int i = 0; i < totalSeats; i++) {
-            // Random prices for development
+            // Random prices for proof of concept
             long price = random.nextInt(100) + 70;
             seats.put(i, new Seat(i, price)); 
         }
