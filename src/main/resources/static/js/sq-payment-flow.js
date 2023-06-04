@@ -61,6 +61,7 @@ window.createPayment = async function(token, seatNum) {
         }
       } else {
         window.showSuccess('Payment Successful!');
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error:', error);

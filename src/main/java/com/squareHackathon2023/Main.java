@@ -53,6 +53,9 @@ public class Main {
   protected final String squareAppId;
   protected final String squareEnvironment;
 
+
+  private static CompletableFuture<String> seated = null;
+  
   // Hardcoded event for testing
   protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);
   private final Gson gson = new Gson();
@@ -158,25 +161,21 @@ public class Main {
         .amountMoney(bodyAmountMoney)
         .locationId(squareLocationId)
         .build();
-    
-    //System.out.println("Source Id: " + tokenObject.getToken());
 
-    return (
-      paymentsApi.createPaymentAsync(createPaymentRequest)
-        .thenApply(result -> {
-          // Create customer and add card to file
-          createCustomer(tokenObject, result.getPayment().getId());
-          System.out.printf("Fingerprint: %s\n", result.getPayment().getCardDetails().getCard().getFingerprint());
-          System.out.println("Payment Request Success!");
-          return new SquareResult("SUCCESS", null);
+    SquareResult sqRes = paymentsApi.createPaymentAsync(createPaymentRequest)
+        .thenCompose(paymentResponse -> {
+          // Create customer and add card to file if payment was successful
+          return createCustomer(tokenObject, paymentResponse.getPayment().getId());
         })
         .exceptionally(exception -> {
           ApiException e = (ApiException) exception.getCause();
           System.out.println("Failed to make the create payment request");
           System.out.printf("Exception: %s%n", e.getMessage());
           return new SquareResult("FAILURE", e.getErrors());
-        }).join()
-    );
+        }).join();
+
+    System.out.println("Sending result");
+    return sqRes;
   }
 
   /**
@@ -277,7 +276,7 @@ public class Main {
   }
 
   /**
-   * Recieves JSON from Square on payment.created and checks card to see if there is a seat associated with customer
+   * Recieves JSON from Square on payment.created webhook and checks card to see if there is a seat associated with customer
    * @param String
    * @return
    * @throws InterruptedException
@@ -286,7 +285,7 @@ public class Main {
   @PostMapping("/process-verification")
   @ResponseBody
   void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
-    System.out.println("In getCardInfo()");
+    System.out.println("Recieved payment.created webhook");
 
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
@@ -314,16 +313,36 @@ public class Main {
       //Check in attendee
       if (seatNum != -1) {
         System.out.println("Seat found!");
+        seated.complete("Seat #" + seatNum + "found");
         venue.findSeat(seatNum).arrive();
         return;
       } else {
         System.out.println("Seat not found");
+        seated.complete("Seat not found!");
         return;
       }
     }
     else {
       System.out.println("Ignoring payment");
+      seated.complete(null);
       return;
+    }
+  }
+
+  @GetMapping("/check-card-info")
+  @ResponseBody
+  SquareResult checkCardInfo() throws InterruptedException, ExecutionException {
+    // Get seated
+    CompletableFuture<String> checkSeated = seated;
+
+    // Set seated back to null
+    seated = null;
+
+    if (checkSeated != null) {
+      System.out.println("Waiting for card info...");
+      return new SquareResult(checkSeated.get(), null); // This will block until the future is completed
+    } else {
+      return new SquareResult("FAILURE", null);
     }
   }
 
@@ -444,9 +463,9 @@ public class Main {
   /**
    * Requests customer creation
    * @param tokenObject
-   * @return a future that holds the customerId
+   * @return true if success, false if failure
    */
-  protected void createCustomer(TokenWrapper tokenObject, String paymentId) {  
+  protected CompletableFuture<SquareResult> createCustomer(TokenWrapper tokenObject, String paymentId) {  
     CustomersApi customersApi = squareClient.getCustomersApi();
 
     Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
@@ -457,9 +476,10 @@ public class Main {
       Ticket ticket = new Ticket(tokenObject.getSeatNum(), seat.getAuth()); // Creates ticket
 
       note = gson.toJson(ticket); // Converts ticket to string JSON
-      System.out.println(note);
+      //System.out.println(note);
 
       seat.sell();
+      System.out.println("Sold a ticket");
     }
 
     CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
@@ -469,18 +489,22 @@ public class Main {
         .note(note) // Holds authentication id
         .build();
     
-    customersApi.createCustomerAsync(customer)
-      .thenAccept(result -> {
-        String customerId = result.getCustomer().getId();
-        System.out.println("Customer Request Success!");
-        createCard(tokenObject, customerId, paymentId);
-      })
-      .exceptionally(exception -> {
-        System.out.println("Failed to make the create customer request");
-        System.out.println(String.format("Exception: %s", exception.getMessage()));
-        System.out.println("Check if email is valid");
-        return null;
-      });
+    return (
+        customersApi.createCustomerAsync(customer)
+        .thenApply(result -> {
+          String customerId = result.getCustomer().getId();
+          System.out.println("Customer Request Success!");
+          createCard(tokenObject, customerId, paymentId);
+          return new SquareResult("SUCCESS", null);
+        })
+        .exceptionally(exception -> {
+          ApiException e = (ApiException) exception.getCause();
+          System.out.println("Failed to make the create customer request");
+          System.out.println(String.format("Exception: %s", exception.getMessage()));
+          System.out.println("Check if email is valid");
+          return new SquareResult("FAILURE", e.getErrors());
+        })
+    );
   }
 
   /**

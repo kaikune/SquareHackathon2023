@@ -59,15 +59,34 @@ async function createVerification() {   // Get deviceId from somewhere
             if (data.errors[0].detail) {
                 window.showError(data.errors[0].detail);
             } else {
-                window.showError('Verification Failed.');
+                window.showError('Checkout Creation Failed.');
             }
         } else {
-            window.showSuccess('Verification Successful!');
+            window.showSuccess('Checkout Creation Successful!');
         }
     } catch (error) {
         console.error('Error: ', error);
     }
-    window.location.reload();
+
+    // Check for verifcation status
+    try {
+        const response = await fetch('/check-card-info', {
+            method: 'GET'
+        });
+        const data = await response.json();
+
+        console.log(data);
+        if (data.title === 'FAILURE' || data.status === 404) {
+            window.showError('Verification Failed')
+        } else {
+            window.showSuccess(data.title);
+
+            // Reload window after successful verification
+            if (data.title !== "Seat not found")  window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error: ', error);
+    }
 }
 
 async function connectToTerminal() {
