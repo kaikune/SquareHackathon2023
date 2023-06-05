@@ -96,7 +96,7 @@ async function createVerification() {   // Get deviceId from somewhere
         const data = await response.json();
 
         console.log(data);
-        if (!data.error || data.status === 404) {
+        if (data.title === "FAILURE" || data.status === 404) {
             window.showError('Verification Failed')
         } else {
             window.showSuccess(data.title);
