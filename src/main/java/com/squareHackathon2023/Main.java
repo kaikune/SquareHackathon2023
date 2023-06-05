@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.Arrays;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -151,6 +153,14 @@ public class Main {
   @PostMapping("/process-payment")
   @ResponseBody
   SquareResult processPayment(@RequestBody TokenWrapper tokenObject) throws InterruptedException, ExecutionException {
+    // Create customer and check for errors
+    List<String> createCustomerResult = createCustomer(tokenObject);
+
+    if (createCustomerResult == null) {
+      return new SquareResult("FAILURE", null);
+    }
+
+    // Payment stuffs
     PaymentsApi paymentsApi = squareClient.getPaymentsApi();
 
     // Get currency for location
@@ -167,16 +177,16 @@ public class Main {
 
     // Payment request that binds to the customer
     CreatePaymentRequest createPaymentRequest = new CreatePaymentRequest.Builder(
-        tokenObject.getToken(),
+        createCustomerResult.get(1),
         UUID.randomUUID().toString())
         .amountMoney(bodyAmountMoney)
+        .customerId(createCustomerResult.get(0))
         .locationId(squareLocationId)
         .build();
 
     SquareResult sqRes = paymentsApi.createPaymentAsync(createPaymentRequest)
-        .thenCompose(paymentResponse -> {
-          // Create customer and add card to file if payment was successful
-          return createCustomer(tokenObject, paymentResponse.getPayment().getId());
+        .thenApply(paymentResponse -> {
+          return new SquareResult("SUCCESS", null);
         })
         .exceptionally(exception -> {
           ApiException e = (ApiException) exception.getCause();
@@ -480,7 +490,6 @@ public class Main {
     CardsApi cardsApi = squareClient.getCardsApi();
 
     System.out.println("in isCardOnFile()");
-    //System.out.println("customer: " + customer);
 
     // Retrieve the list of cards associated with the customer
     return (
@@ -507,12 +516,74 @@ public class Main {
   }
 
   /**
-   * Helper function for createCustomer that creates a card with a given customerId and paymentId
+   * Requests customer creation
+   * @param tokenObject
+   * @return List of [Customer ID, Card ID]
+   */
+  protected List<String> createCustomer(TokenWrapper tokenObject) {  
+    CustomersApi customersApi = squareClient.getCustomersApi();
+
+    Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
+
+    CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
+        .givenName(tokenObject.getName())
+        .emailAddress(tokenObject.getEmail())
+        .referenceId(UUID.randomUUID().toString())
+        .note("No ticket") // Holds authentication id
+        .build();
+    
+    return (
+        customersApi.createCustomerAsync(customer)
+        .thenApply(result -> {
+          System.out.println("Customer Request Success!");
+
+          String customerId = result.getCustomer().getId();
+          String cardId = createCard(tokenObject, customerId);
+
+          if (cardId == null) {
+            return null;
+          }
+
+          // Venue matches, seat exists, and seat is still for sale
+          if (venue.getVenueId().equals(tokenObject.getVenueId()) && seat != null && !seat.isSold()) {
+            Ticket ticket = new Ticket(tokenObject.getSeatNum(), seat.getAuth()); // Creates ticket
+            String note = gson.toJson(ticket); // Converts ticket to string JSON
+            
+            // Give the ticket to the customer
+            UpdateCustomerRequest body = new UpdateCustomerRequest.Builder()
+                .note(note) // Holds the ticket
+                .build();
+
+            customersApi.updateCustomerAsync(customerId, body)
+                .thenAccept(updateResult -> {
+                  System.out.println("Success!");
+                })
+                .exceptionally(exception -> {
+                  System.out.println("Failed to make the request");
+                  System.out.println(String.format("Exception: %s", exception.getMessage()));
+                  return null;
+                });
+
+            seat.sell();
+            System.out.println("Sold a ticket");
+          }
+          return Arrays.asList(customerId, cardId);
+        })
+        .exceptionally(exception -> {
+          System.out.println("Failed to make the create customer request");
+          System.out.println(String.format("Exception: %s", exception.getMessage()));
+          return null;
+        }).join()
+    );
+  }
+
+  /**
+   * Helper function for createCustomer that creates a card for the customer
    * @param tokenObject
    * @param customerId
    * @param paymentId
    */
-  private void createCard(TokenWrapper tokenObject, String customerId, String paymentId) { 
+  private String createCard(TokenWrapper tokenObject, String customerId) { 
     CardsApi cardsApi = squareClient.getCardsApi();
 
     Card card = new Card.Builder()
@@ -522,65 +593,21 @@ public class Main {
     
     CreateCardRequest body = new CreateCardRequest.Builder(
       UUID.randomUUID().toString(),
-      paymentId,
+      tokenObject.getToken(),
       card)
       .build();
     
-    cardsApi.createCardAsync(body)
-      .thenAccept(result -> {
+    return (
+      cardsApi.createCardAsync(body)
+      .thenApply(result -> {
         System.out.println("Card Request Success!");
+        return result.getCard().getId();
       })
       .exceptionally(exception -> {
         System.out.println("Failed to make the create card request");
         System.out.println(String.format("Exception: %s", exception.getMessage()));
         return null;
-      });
-  }
-
-  /**
-   * Requests customer creation
-   * @param tokenObject
-   * @return true if success, false if failure
-   */
-  protected CompletableFuture<SquareResult> createCustomer(TokenWrapper tokenObject, String paymentId) {  
-    CustomersApi customersApi = squareClient.getCustomersApi();
-
-    Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
-    String note = "No ticket";
-
-    // Venue matches, seat exists, and seat is still for sale
-    if (venue.getVenueId().equals(tokenObject.getVenueId()) && seat != null && !seat.isSold()) {
-      Ticket ticket = new Ticket(tokenObject.getSeatNum(), seat.getAuth()); // Creates ticket
-
-      note = gson.toJson(ticket); // Converts ticket to string JSON
-      //System.out.println(note);
-
-      seat.sell();
-      System.out.println("Sold a ticket");
-    }
-
-    CreateCustomerRequest customer = new CreateCustomerRequest.Builder()
-        .givenName(tokenObject.getName())
-        .emailAddress(tokenObject.getEmail())
-        .referenceId(UUID.randomUUID().toString())
-        .note(note) // Holds authentication id
-        .build();
-    
-    return (
-        customersApi.createCustomerAsync(customer)
-        .thenApply(result -> {
-          String customerId = result.getCustomer().getId();
-          System.out.println("Customer Request Success!");
-          createCard(tokenObject, customerId, paymentId);
-          return new SquareResult("SUCCESS", null);
-        })
-        .exceptionally(exception -> {
-          ApiException e = (ApiException) exception.getCause();
-          System.out.println("Failed to make the create customer request");
-          System.out.println(String.format("Exception: %s", exception.getMessage()));
-          System.out.println("Check if email is valid");
-          return new SquareResult("FAILURE", e.getErrors());
-        })
+      }).join()
     );
   }
 

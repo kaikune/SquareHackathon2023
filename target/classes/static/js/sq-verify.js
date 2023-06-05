@@ -7,17 +7,29 @@ window.payments = Square.payments(window.applicationId, window.locationId);
 
 window.verifyFlowMessageEl = document.getElementById('verify-flow-message');
 window.deviceCodeEl = document.getElementById('device-code');
+var loaderContainer = document.getElementById('loader-container');
 
 window.showSuccess = function(message) {
+    window.loaderContainer.removeChild(loaderContainer.firstChild);
     window.verifyFlowMessageEl.classList.add('success');
     window.verifyFlowMessageEl.classList.remove('error');
     window.verifyFlowMessageEl.innerText = message;
 }
 
 window.showError = function(message) {
+    window.loaderContainer.removeChild(loaderContainer.firstChild);
     window.verifyFlowMessageEl.classList.add('error');
     window.verifyFlowMessageEl.classList.remove('success');
     window.verifyFlowMessageEl.innerText = message;
+}
+
+window.showLoader = function() {
+    var loaderEl = document.createElement('div');
+    loaderEl.classList.add('loader');
+    loaderContainer.appendChild(loaderEl)
+
+    window.verifyFlowMessageEl.classList.remove('success');
+    window.verifyFlowMessageEl.classList.remove('error');
 }
 
 window.showDeviceCode = function(code) {
@@ -32,7 +44,7 @@ async function CardVerify(buttonEl) {
     async function eventHandler(event) {
         // Clear any existing messages
         window.verifyFlowMessageEl.innerText = '';
-
+        window.showLoader();
         try {
             window.createVerification(result.token, chosenSeat);
         } catch (e) {
@@ -49,6 +61,8 @@ async function CardVerify(buttonEl) {
 
 async function createVerification() {   // Get deviceId from somewhere
     console.log("Verifying");
+    window.showLoader();
+    
     try {
         const response = await fetch('/verify', {
             method: 'GET'

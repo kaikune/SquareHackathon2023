@@ -1,6 +1,5 @@
 var chosenSeat = null;
 var venueId;
-var seatsContainer = document.getElementById("seats-container");
 
 /**
  * Receives all venue information from the server
