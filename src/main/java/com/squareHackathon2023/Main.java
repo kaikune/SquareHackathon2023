@@ -372,27 +372,30 @@ public class Main {
     System.out.println("In verifyCard()");
 
     JsonObject result;
+    String note;
+    JsonObject cardDetails;
+    String fingerprint;
+
     try {
       // Parse the JSON string
       result = gson.fromJson(paymentJson, JsonObject.class);
-    } catch(JsonSyntaxException e) {
-      System.out.println(e.getMessage());
-      return;
-    }
-
-    result = result.getAsJsonObject("data")
+      result = result.getAsJsonObject("data")
           .getAsJsonObject("object")
           .getAsJsonObject("payment");
           
-    String note = result.get("note").getAsString();
+      note = result.get("note").getAsString();
 
-    // Access the nested card details
-    JsonObject cardDetails = result.getAsJsonObject("card_details");
+      // Access the nested card details
+      cardDetails = result.getAsJsonObject("card_details");
 
-    // Extract the fingerprint
-    String fingerprint = cardDetails.getAsJsonObject("card")
-        .get("fingerprint")
-        .getAsString();
+      // Extract the fingerprint
+      fingerprint = cardDetails.getAsJsonObject("card")
+          .get("fingerprint")
+          .getAsString();
+    } catch(Exception e) {
+      System.out.println("Error: " + e.getMessage());
+      return;
+    }
 
     System.out.println("Fingerprint: " + fingerprint);
 
