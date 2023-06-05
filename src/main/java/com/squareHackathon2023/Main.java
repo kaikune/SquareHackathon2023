@@ -426,7 +426,9 @@ public class Main {
 
     if (checkSeated != null) {
       System.out.println("Waiting for card info...");
-      return new SquareResult(checkSeated.get(), null); // This will block until the future is completed
+      String result = checkSeated.get();
+      System.out.println("Got card info");
+      return new SquareResult(result, null); // This will block until the future is completed
     } else {
       System.out.println("checkSeated = not good");
       return new SquareResult("FAILURE", null);
