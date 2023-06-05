@@ -9,8 +9,8 @@ window.paymentFlowMessageEl = document.getElementById('payment-flow-message');
 var loaderContainer = document.getElementById('loader-container');
 
 window.showSuccess = function(message) {
-  if (window.showLoader.firstChild) {
-    window.loaderContainer.removeChild(loaderContainer.firstChild);
+  if (loaderContainer.firstChild) {
+    loaderContainer.removeChild(loaderContainer.firstChild);
   }
   window.paymentFlowMessageEl.classList.add('success');
   window.paymentFlowMessageEl.classList.remove('error');
@@ -18,8 +18,8 @@ window.showSuccess = function(message) {
 }
 
 window.showError = function(message) {
-  if (window.showLoader.firstChild) {
-    window.loaderContainer.removeChild(loaderContainer.firstChild);
+  if (loaderContainer.firstChild) {
+    loaderContainer.removeChild(loaderContainer.firstChild);
   }
   window.paymentFlowMessageEl.classList.add('error');
   window.paymentFlowMessageEl.classList.remove('success');
@@ -27,7 +27,7 @@ window.showError = function(message) {
 }
 
 window.showLoader = function() {
-  if (window.loaderContainer.firstChild) {
+  if (loaderContainer.firstChild) {
     return;
   }
   var loaderEl = document.createElement('div');
@@ -107,11 +107,11 @@ async function CardPay(fieldEl, buttonEl) {
   async function eventHandler(event) {
     // Clear any existing messages
     window.paymentFlowMessageEl.innerText = '';
-    window.showLoader()
+
     try {
       const result = await card.tokenize();
       if (result.status === 'OK') {
-        // Use global method from sq-payment-flow.js
+        window.showLoader();
         window.createPayment(result.token, chosenSeat);
       }
     } catch (e) {

@@ -10,8 +10,8 @@ window.deviceCodeEl = document.getElementById('device-code');
 var loaderContainer = document.getElementById('loader-container');
 
 window.showSuccess = function(message) {
-    if (window.showLoader.firstChild) {
-        window.loaderContainer.removeChild(loaderContainer.firstChild);
+    if (loaderContainer.firstChild) {
+        loaderContainer.removeChild(loaderContainer.firstChild);
     }
     window.verifyFlowMessageEl.classList.add('success');
     window.verifyFlowMessageEl.classList.remove('error');
@@ -19,8 +19,8 @@ window.showSuccess = function(message) {
 }
 
 window.showError = function(message) {
-    if (window.showLoader.firstChild) {
-        window.loaderContainer.removeChild(loaderContainer.firstChild);
+    if (loaderContainer.firstChild) {
+        loaderContainer.removeChild(loaderContainer.firstChild);
     }
     window.verifyFlowMessageEl.classList.add('error');
     window.verifyFlowMessageEl.classList.remove('success');
@@ -28,7 +28,7 @@ window.showError = function(message) {
 }
 
 window.showLoader = function() {
-    if (window.loaderContainer.firstChild) {
+    if (loaderContainer.firstChild) {
         return;
     }
     var loaderEl = document.createElement('div');
@@ -83,10 +83,7 @@ async function createVerification() {   // Get deviceId from somewhere
                 window.showError('Checkout Creation Failed.');
                 console.log('Checkout failure');
             }
-        } else {
-            window.showSuccess('Checkout Creation Successful!');
-            console.log('Checkout success');
-        }
+        } 
     } catch (error) {
         console.error('Error: ', error);
     }
@@ -102,14 +99,14 @@ async function createVerification() {   // Get deviceId from somewhere
         if (data.title === "FAILURE" || data.status === 404) {
             window.showError('Verification Failed')
         } else {
-            window.showSuccess(data.title);
-
-            // Reload window after successful verification
-            if (data.title !== "Seat not found") {
+            if (data.title === "Seat not found") {
+                window.showError(data.title);
+            } else {
+                window.showSuccess(data.title);
                 // Wait 1 second
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 1500);
             } 
         }
     } catch (error) {
