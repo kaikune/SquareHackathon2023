@@ -63,6 +63,7 @@ public class Main {
   protected final String squareEnvironment;
   protected final String squarePaymentWebhook;
   protected final String squareDeviceWebhook;
+  private final RetrieveLocationResponse locationResponse;
 
   private static CompletableFuture<String> seated = new CompletableFuture<>();
   
@@ -73,7 +74,7 @@ public class Main {
   // Hardcoded deviceId for testing
   private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
-  public Main() throws ApiException {
+  public Main() throws ApiException, ExecutionException, InterruptedException {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));
     squareAppId = mustLoadEnvironmentVariable(System.getenv("SQUARE_APPLICATION_ID"));
     squareLocationId = mustLoadEnvironmentVariable(System.getenv("SQUARE_LOCATION_ID"));
@@ -85,6 +86,8 @@ public class Main {
         .accessToken(mustLoadEnvironmentVariable(System.getenv("SQUARE_ACCESS_TOKEN")))
         .userAgentDetail("ConcertMaster")
         .build();
+
+    locationResponse = getLocationInformation(squareClient).get();
   }
 
   public static void main(String[] args) throws Exception {
@@ -105,10 +108,9 @@ public class Main {
   }
 
   @RequestMapping("/")
-  String index(Map<String, Object> model) throws InterruptedException, ExecutionException {
+  String index(Map<String, Object> model) {
 
     // Get currency and country for location
-    RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
     model.put("paymentFormUrl", squareEnvironment.equals("sandbox") ? "https://sandbox.web.squarecdn.com/v1/square.js" : "https://web.squarecdn.com/v1/square.js");
     model.put("locationId", squareLocationId);
     model.put("appId", squareAppId);
@@ -123,7 +125,6 @@ public class Main {
   String checkIn(Map<String, Object> model) throws InterruptedException, ExecutionException {
 
     // Get currency and country for location
-    RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
     model.put("paymentFormUrl", squareEnvironment.equals("sandbox") ? "https://sandbox.web.squarecdn.com/v1/square.js" : "https://web.squarecdn.com/v1/square.js");
     model.put("locationId", squareLocationId);
     model.put("appId", squareAppId);
@@ -164,7 +165,6 @@ public class Main {
     PaymentsApi paymentsApi = squareClient.getPaymentsApi();
 
     // Get currency for location
-    RetrieveLocationResponse locationResponse = getLocationInformation(squareClient).get();
     String currency = locationResponse.getLocation().getCurrency();
 
     Seat seat = venue.findSeat(tokenObject.getSeatNum()); // Gets auth if seat number corresponds
