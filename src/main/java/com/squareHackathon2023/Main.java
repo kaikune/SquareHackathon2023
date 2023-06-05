@@ -25,6 +25,7 @@ import com.squareup.square.api.TerminalApi;
 import com.squareup.square.models.*;
 import com.squareup.square.SquareClient;
 import com.squareup.square.exceptions.ApiException;
+import com.squareup.square.utilities.WebhooksHelper;
 
 import java.util.concurrent.ExecutionException;
 import java.util.Map;
@@ -36,6 +37,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,8 +60,8 @@ public class Main {
   protected final String squareLocationId;
   protected final String squareAppId;
   protected final String squareEnvironment;
-
-
+  protected final String squarePaymentWebhook;
+  protected final String squareDeviceWebhook;
 
   private static CompletableFuture<String> seated = new CompletableFuture<>();
   
@@ -71,6 +75,8 @@ public class Main {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));
     squareAppId = mustLoadEnvironmentVariable(System.getenv("SQUARE_APPLICATION_ID"));
     squareLocationId = mustLoadEnvironmentVariable(System.getenv("SQUARE_LOCATION_ID"));
+    squarePaymentWebhook = Main.mustLoadEnvironmentVariable(System.getenv("WEBHOOK_KEY"));
+    squareDeviceWebhook = Main.mustLoadEnvironmentVariable(System.getenv("WEBHOOK_DEVICE_KEY"));
 
     squareClient = new SquareClient.Builder()
         .environment(Environment.fromString(squareEnvironment))
@@ -218,35 +224,44 @@ public class Main {
    */
   @PostMapping("/device")
   @ResponseBody
-  void getDeviceId(@RequestBody String deviceJson) {
+  ResponseEntity<String> getDeviceId(@RequestBody String deviceJson) {
+    System.out.println("Recieved device webhook");
     // Get the HttpServletRequest object
     ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
     // Check if attributes is null
     if (attributes == null) {
       System.out.println("ServletRequestAttributes is null");
-      return;
+      return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
     HttpServletRequest request = attributes.getRequest();
 
     // Get the X-Square-Signature header from the request
-    String signatureHeader = request.getHeader("X-Square-Signature");
+    String signatureHeader = request.getHeader("x-square-hmacsha256-signature");
 
-    // Verify the webhook signature
-    if (!WebhookValidator.validateWebhook(signatureHeader, deviceJson)) {
-      // Signature is not valid, reject the request
-      System.out.println("Invalid webhook signature");
-      return;
-    }
-    JsonObject result = gson.fromJson(deviceJson, JsonObject.class);
+    // Verify Webhook signature
+    boolean isValid = WebhooksHelper.isValidWebhookEventSignature(deviceJson, signatureHeader, squareDeviceWebhook, "https://concertmaster.azurewebsites.net/device");
 
-    deviceId = result.getAsJsonObject("data")
-        .getAsJsonObject("object")
-        .getAsJsonObject("device_code")
-        .get("device_id")
-        .getAsString();
+    if (isValid) {  // Signature is valid
+      System.out.println("Signature is valid");
+
+      JsonObject result = gson.fromJson(deviceJson, JsonObject.class);
+
+      deviceId = result.getAsJsonObject("data")
+          .getAsJsonObject("object")
+          .getAsJsonObject("device_code")
+          .get("device_id")
+          .getAsString();
       
-    System.out.println("Device Id: " + deviceId);
+      // Return 200 OK.
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("X-Square-HmacSha256-Signature", signatureHeader);
+      return new ResponseEntity<>(deviceJson, headers, HttpStatus.OK);
+    } else {  // Signature is invalid. Return 403
+      System.out.println("Signature is invalid");
+      return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    }
+
   }
 
   /**
@@ -308,7 +323,7 @@ public class Main {
    */
   @PostMapping("/process-verification")
   @ResponseBody
-  void getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
+  ResponseEntity<String> getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     System.out.println("Recieved payment.created webhook");
 
     // Get the HttpServletRequest object
@@ -317,20 +332,34 @@ public class Main {
     // Check if attributes is null
     if (attributes == null) {
       System.out.println("ServletRequestAttributes is null");
-      return;
+      return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
+    
     HttpServletRequest request = attributes.getRequest();
 
     // Get the X-Square-Signature header from the request
-    String signatureHeader = request.getHeader("X-Square-Signature");
+    String signatureHeader = request.getHeader("x-square-hmacsha256-signature");
 
-    // Verify the webhook signature
-    if (!WebhookValidator.validateWebhook(signatureHeader, paymentJson)) {
-      // Signature is not valid, reject the request
-      System.out.println("Invalid webhook signature");
-      return;
+    // Verify Webhook signature
+    boolean isValid = WebhooksHelper.isValidWebhookEventSignature(paymentJson, signatureHeader, squarePaymentWebhook, "https://concertmaster.azurewebsites.net/process-verification");
+
+    if (isValid) {  // Signature is valid
+      System.out.println("Signature is valid");
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("X-Square-HmacSha256-Signature", signatureHeader);
+
+      // Verify card against cards on file
+      verifyCard(paymentJson);
+      
+      return new ResponseEntity<>(paymentJson, headers, HttpStatus.OK);
+    } else {  // Signature is invalid. Send 403
+      System.out.println("Signature is invalid");
+      return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
+  }
 
+  private void verifyCard(String paymentJson) {
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
     result = result.getAsJsonObject("data")
