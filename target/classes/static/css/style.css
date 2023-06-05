@@ -355,6 +355,15 @@ input[type="email"] {
   height: 20px;
   display: block;
   font-size: 14px;
+  color: blue;
+}
+
+#verify-flow-message.error {
+  color: #bf0020;
+}
+
+#verify-flow-message.success {
+  color: #3374ff;
 }
 
 .pair-device {

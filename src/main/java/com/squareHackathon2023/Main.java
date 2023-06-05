@@ -52,7 +52,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 
 
 @Controller
@@ -171,7 +170,7 @@ public class Main {
 
     // Set price of ticket
     Money bodyAmountMoney = new Money.Builder()
-        .amount(seat.getPrice())
+        .amount(seat.getPrice() * 100)
         .currency(currency)
         .build();
 
@@ -354,7 +353,7 @@ public class Main {
       System.out.println("Signature is valid");
 
       // Verify card against cards on file
-      verifyCard(paymentJson);
+      checkForSeat(paymentJson);
       
       System.out.println("Returning Status 200");
       return new ResponseEntity<>(HttpStatus.OK);
@@ -368,8 +367,8 @@ public class Main {
    * Helper function for getCardInfo()
    * @param paymentJson
    */
-  private void verifyCard(String paymentJson) {
-    System.out.println("In verifyCard()");
+  private void checkForSeat(String paymentJson) {
+    System.out.println("In checkForSeat()");
 
     JsonObject result;
     String note;
@@ -428,12 +427,17 @@ public class Main {
     // Get seated
     CompletableFuture<String> checkSeated = seated;
 
-    // Set seated back to original state
-    seated = new CompletableFuture<String>();
-
     if (checkSeated != null) {
       System.out.println("Waiting for card info...");
-      return new SquareResult(checkSeated.get(), null); // This will block until the future is completed
+
+      // This will block until the future is completed
+      String seatInfo = checkSeated.get();
+
+      System.out.println("Got seat info");
+
+      // Set seated back to original state
+      seated = new CompletableFuture<String>();
+      return new SquareResult(seatInfo, null);
     } else {
       return new SquareResult("FAILURE", null);
     }

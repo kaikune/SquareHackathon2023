@@ -27,6 +27,9 @@ window.showError = function(message) {
 }
 
 window.showLoader = function() {
+  if (window.loaderContainer.firstChild) {
+    return;
+  }
   var loaderEl = document.createElement('div');
   loaderEl.classList.add('loader');
   loaderContainer.appendChild(loaderEl)

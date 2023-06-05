@@ -28,6 +28,9 @@ window.showError = function(message) {
 }
 
 window.showLoader = function() {
+    if (window.loaderContainer.firstChild) {
+        return;
+    }
     var loaderEl = document.createElement('div');
     loaderEl.classList.add('loader');
     loaderContainer.appendChild(loaderEl)
@@ -102,7 +105,12 @@ async function createVerification() {   // Get deviceId from somewhere
             window.showSuccess(data.title);
 
             // Reload window after successful verification
-            if (data.title !== "Seat not found")  window.location.reload();
+            if (data.title !== "Seat not found") {
+                // Wait 1 second
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } 
         }
     } catch (error) {
         console.error('Error: ', error);
