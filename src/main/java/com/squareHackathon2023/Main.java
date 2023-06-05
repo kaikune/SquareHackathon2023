@@ -219,7 +219,7 @@ public class Main {
   }
 
   /**
-   * Gets deviceId from terminal.paired webhook
+   * Gets deviceId from device.code.paired webhook
    * @param deviceJson
    */
   @PostMapping("/device")
@@ -334,7 +334,7 @@ public class Main {
       System.out.println("ServletRequestAttributes is null");
       return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
-    
+
     HttpServletRequest request = attributes.getRequest();
 
     // Get the X-Square-Signature header from the request
@@ -359,6 +359,10 @@ public class Main {
     }
   }
 
+  /**
+   * Helper function for getCardInfo()
+   * @param paymentJson
+   */
   private void verifyCard(String paymentJson) {
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
@@ -367,7 +371,6 @@ public class Main {
         .getAsJsonObject("payment");
 
     String note = result.get("note").getAsString();
-    System.out.println("Note: " + note);
 
     // Access the nested card details
     JsonObject cardDetails = result.getAsJsonObject("card_details");
