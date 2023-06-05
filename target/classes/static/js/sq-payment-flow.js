@@ -1,4 +1,3 @@
-
 async function SquarePaymentFlow() {
   // Create card payment object and attach to page
   CardPay(document.getElementById('card-container'), document.getElementById('card-button'));
@@ -10,14 +9,18 @@ window.paymentFlowMessageEl = document.getElementById('payment-flow-message');
 var loaderContainer = document.getElementById('loader-container');
 
 window.showSuccess = function(message) {
-  window.loaderContainer.removeChild(loaderContainer.firstChild);
+  if (window.showLoader.firstChild) {
+    window.loaderContainer.removeChild(loaderContainer.firstChild);
+  }
   window.paymentFlowMessageEl.classList.add('success');
   window.paymentFlowMessageEl.classList.remove('error');
   window.paymentFlowMessageEl.innerText = message;
 }
 
 window.showError = function(message) {
-  window.loaderContainer.removeChild(loaderContainer.firstChild);
+  if (window.showLoader.firstChild) {
+    window.loaderContainer.removeChild(loaderContainer.firstChild);
+  }
   window.paymentFlowMessageEl.classList.add('error');
   window.paymentFlowMessageEl.classList.remove('success');
   window.paymentFlowMessageEl.innerText = message;
@@ -65,7 +68,6 @@ window.createPayment = async function(token, seatNum) {
       }); 
   
       const data = await response.json();
-      console.log(data);
       if (data.title === "FAILURE") {
         if (data.errors) {
           window.showError(data.errors[0].detail);
