@@ -68,7 +68,7 @@ public class Main {
   private static CompletableFuture<String> seated = new CompletableFuture<>();
   
   // Hardcoded event for testing
-  protected static final Venue venue = new Venue("Concert Central", "Ice Spice", 100);
+  protected static final Venue venue = new Venue("Concert Central", "Billy Joel", 100);
   private final Gson gson = new Gson();
 
   private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f"; // Hardcoded deviceId for testing
@@ -233,7 +233,6 @@ public class Main {
    * @param deviceJson
    */
   @PostMapping("/device")
-  @ResponseBody
   ResponseEntity<String> getDeviceId(@RequestBody String deviceJson) {
     System.out.println("Recieved device webhook");
     // Get the HttpServletRequest object
@@ -266,9 +265,10 @@ public class Main {
       // Return 200 OK.
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-Square-HmacSha256-Signature", signatureHeader);
-      return new ResponseEntity<>(deviceJson, headers, HttpStatus.OK);
+      System.out.println("Returing Status 200");
+      return new ResponseEntity<>(HttpStatus.OK);
     } else {  // Signature is invalid. Return 403
-      System.out.println("Signature is invalid");
+      System.out.println("Signature is invalid\nReturning Status 403");
       return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
 
@@ -332,7 +332,6 @@ public class Main {
    * @throws ExecutionException
    */
   @PostMapping("/process-verification")
-  @ResponseBody
   ResponseEntity<String> getCardInfo(@RequestBody String paymentJson) throws InterruptedException, ExecutionException{
     System.out.println("Recieved payment.created webhook");
 
@@ -362,9 +361,10 @@ public class Main {
       // Verify card against cards on file
       verifyCard(paymentJson);
       
-      return new ResponseEntity<>(paymentJson, headers, HttpStatus.OK);
+      System.out.println("Returning Status 200");
+      return new ResponseEntity<>(HttpStatus.OK);
     } else {  // Signature is invalid. Send 403
-      System.out.println("Signature is invalid");
+      System.out.println("Signature is invalid\nReturning Status 403");
       return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
   }
