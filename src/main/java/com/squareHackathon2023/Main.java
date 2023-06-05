@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -263,8 +262,6 @@ public class Main {
           .getAsString();
       
       // Return 200 OK.
-      HttpHeaders headers = new HttpHeaders();
-      headers.set("X-Square-HmacSha256-Signature", signatureHeader);
       System.out.println("Returing Status 200");
       return new ResponseEntity<>(HttpStatus.OK);
     } else {  // Signature is invalid. Return 403
@@ -355,9 +352,6 @@ public class Main {
     if (isValid) {  // Signature is valid
       System.out.println("Signature is valid");
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.set("X-Square-HmacSha256-Signature", signatureHeader);
-
       // Verify card against cards on file
       verifyCard(paymentJson);
       
@@ -374,6 +368,7 @@ public class Main {
    * @param paymentJson
    */
   private void verifyCard(String paymentJson) {
+    System.out.println("In verifyCard()");
     // Parse the JSON string
     JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
     result = result.getAsJsonObject("data")
@@ -426,11 +421,8 @@ public class Main {
 
     if (checkSeated != null) {
       System.out.println("Waiting for card info...");
-      String result = checkSeated.get();
-      System.out.println("Got card info");
-      return new SquareResult(result, null); // This will block until the future is completed
+      return new SquareResult(checkSeated.get(), null); // This will block until the future is completed
     } else {
-      System.out.println("checkSeated = not good");
       return new SquareResult("FAILURE", null);
     }
   }
