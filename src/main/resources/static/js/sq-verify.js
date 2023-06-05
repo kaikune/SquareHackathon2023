@@ -102,11 +102,9 @@ async function createVerification() {   // Get deviceId from somewhere
             if (data.title === "Seat not found") {
                 window.showError(data.title);
             } else {
-                window.showSuccess(data.title);
-                // Wait 1 second
-                setTimeout(() => {
+                if(!alert(data.title)) {
                     window.location.reload();
-                }, 1500);
+                }
             } 
         }
     } catch (error) {
