@@ -52,6 +52,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 
 @Controller
@@ -369,12 +370,20 @@ public class Main {
    */
   private void verifyCard(String paymentJson) {
     System.out.println("In verifyCard()");
-    // Parse the JSON string
-    JsonObject result = gson.fromJson(paymentJson, JsonObject.class);
-    result = result.getAsJsonObject("data")
-        .getAsJsonObject("object")
-        .getAsJsonObject("payment");
 
+    JsonObject result;
+    try {
+      // Parse the JSON string
+      result = gson.fromJson(paymentJson, JsonObject.class);
+    } catch(JsonSyntaxException e) {
+      System.out.println(e.getMessage());
+      return;
+    }
+
+    result = result.getAsJsonObject("data")
+          .getAsJsonObject("object")
+          .getAsJsonObject("payment");
+          
     String note = result.get("note").getAsString();
 
     // Access the nested card details
