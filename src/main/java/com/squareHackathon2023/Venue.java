@@ -79,14 +79,16 @@ public class Venue {
     public void fill(int totalSeats) {
         Random random = new Random();
         this.totalSeats = totalSeats;
-
+        boolean val;
         for(int i = 0; i < totalSeats; i++) {
             // Random prices for proof of concept
             long price = random.nextInt(100) + 70;
-            seats.put(i, new Seat(i, price)); 
+            val = new Random().nextInt(4)==0;
+
+            seats.put(i, new Seat(i, price, val)); 
         }
         
-        // Debug
+        // Testing
         //seats.get(2).arrive();
     }
 

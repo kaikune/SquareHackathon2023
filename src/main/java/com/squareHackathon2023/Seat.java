@@ -13,6 +13,7 @@ public class Seat {
         price = 100L;
         auth = UUID.randomUUID().toString();
         sold = false;
+        arrived = false;
     }
 
     public Seat(int num, long price) {
@@ -20,6 +21,15 @@ public class Seat {
         this.price = price;
         auth = UUID.randomUUID().toString();
         sold = false;
+        arrived = false;
+    }
+
+    public Seat(int num, long price, boolean sold) {
+        this.num = num;
+        this.price = price;
+        auth = UUID.randomUUID().toString();
+        this.sold = sold;
+        arrived = false;
     }
 
     public int getNum() {
