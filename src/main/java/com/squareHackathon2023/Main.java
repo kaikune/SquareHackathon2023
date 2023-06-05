@@ -67,10 +67,11 @@ public class Main {
   private static CompletableFuture<String> seated = new CompletableFuture<>();
   
   // Hardcoded event for testing
-  protected static final Venue venue = new Venue("Concert Central", "Billy Joel", 100);
+  protected static final Venue venue = new Venue("Steven's Pub", "Weird Al", 96);
   private final Gson gson = new Gson();
 
-  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f"; // Hardcoded deviceId for testing
+  // Hardcoded deviceId for testing
+  private String deviceId = "9fa747a2-25ff-48ee-b078-04381f7c828f";
 
   public Main() throws ApiException {
     squareEnvironment = mustLoadEnvironmentVariable(System.getenv("ENVIRONMENT"));

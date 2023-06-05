@@ -84,6 +84,19 @@ input[type="email"] {
 
 .header {
   text-align: center;
+  color: #333;
+  background-color: #bbb;
+  border-radius: 8px;
+  padding: 5px;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -110%);
+  margin: 0;
+  z-index: 2;
+}
+
+.check-in-header {
+  text-align: center;
   font-size: 28px;
   font-weight: bold;
   color: #333;
